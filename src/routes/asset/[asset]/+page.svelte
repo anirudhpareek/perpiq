@@ -17,9 +17,26 @@
 	let { data }: PageProps = $props();
 	const { snapshot } = $derived(data);
 
-	// Asset data
+	// Asset data. Some configured assets (e.g. assets that only ever existed on
+	// currently-delisted hyperliquid HIP-3 DEXes) have no rows in the latest
+	// batch — render a graceful "no data" state instead of crashing.
 	const asset = $derived(snapshot.assets[data.asset]);
-	const meta: MetaT = $derived((tickers.perps as TickerCfg)[asset.category][data.asset].meta);
+	const hasData = $derived(asset !== undefined);
+	const tickerMeta = $derived(
+		(tickers.perps as TickerCfg)[asset?.category ?? Object.keys(tickers.perps)[0]]?.[data.asset]
+	);
+	const meta: MetaT = $derived(tickerMeta?.meta ?? findMeta(data.asset));
+
+	function findMeta(id: string): MetaT {
+		for (const cat of Object.values(tickers.perps as TickerCfg)) {
+			if (cat[id]) return cat[id].meta;
+		}
+		return {
+			name: id.toUpperCase(),
+			description: "",
+			icon: ["/assets/icons/exchanges/hyperliquid.svg"]
+		};
+	}
 
 	// Structured schema
 	// @dev: Doesn't have to be derived given pageload properties but added
@@ -30,12 +47,12 @@
 		"@type": "FinancialProduct",
 		name: title,
 		url: metaConfig.url + page.url.pathname,
-		category: asset.category,
+		category: asset?.category ?? "stocks",
 		offers: {
 			"@type": "AggregateOffer",
 			priceCurrency: meta.quote,
-			price: asset.medianRefPx.toString(),
-			offerCount: asset.marketIds.length
+			price: (asset?.medianRefPx ?? 0).toString(),
+			offerCount: asset?.marketIds.length ?? 0
 		},
 		isRelatedTo: {
 			"@type": "FinancialProduct",
@@ -74,6 +91,20 @@
 	</Grid>
 </div>
 
+{#if !hasData}
+	<div>
+		<Grid>
+			<div class="flex flex-1 flex-col px-4 py-8">
+				<p class="text-sm text-gecko-gray/75">
+					No live market data for this asset in the latest snapshot. It may have been delisted on
+					all tracked venues.
+				</p>
+			</div>
+		</Grid>
+	</div>
+{/if}
+
+{#if hasData && asset}
 <!-- Aggregate statistics -->
 <div>
 	<Grid>
@@ -116,3 +147,4 @@
 <div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">
 	<MarketTable filter={{ assetId: data.asset }} {snapshot} />
 </div>
+{/if}

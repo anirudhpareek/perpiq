@@ -6,8 +6,10 @@ import { buildSnapshot, buildDiffedSnapshot, type DiffedSnapshot } from "$lib/tr
 // One day in milliseconds
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-// P0 venues — force fail build if missing in latest batch
-const P0_VENUES: readonly string[] = ["hyperliquid", "binance", "lighter"];
+// P0 venues — force fail build if missing in latest batch.
+// Binance is geo-blocked from default Vercel egress; we no longer hard-require
+// it since the seed endpoint can produce a valid batch without it.
+const P0_VENUES: readonly string[] = ["hyperliquid", "lighter"];
 
 /**
  * Loads and returns `DiffedSnapshot` w/ 24h change if exists (else no change) from DB

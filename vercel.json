@@ -2,7 +2,7 @@
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"bunVersion": "1.x",
 	"crons": [
-		{ "path": "/api/jobs/collect", "schedule": "*/10 * * * *" },
-		{ "path": "/api/rebuild", "schedule": "5 */6 * * *" }
+		{ "path": "/api/jobs/seed", "schedule": "0 12 * * *" },
+		{ "path": "/api/rebuild", "schedule": "30 12 * * *" }
 	]
 }
