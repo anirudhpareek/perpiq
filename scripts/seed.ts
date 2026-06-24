@@ -7,9 +7,27 @@
 //   pnpm tsx scripts/seed.ts
 
 import { randomUUID } from "crypto";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { Decimal } from "decimal.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/lib/generated/prisma/client";
+
+const execFileP = promisify(execFile);
+
+// Some venues (edgex) bot-block Node's TLS fingerprint but accept curl.
+// Shell-fallback fetch used only where needed.
+async function curlJson<T>(url: string): Promise<T> {
+	const { stdout } = await execFileP("curl", ["-sS", "-H", "User-Agent: Mozilla/5.0", url], {
+		maxBuffer: 32 * 1024 * 1024
+	});
+	try {
+		return JSON.parse(stdout) as T;
+	} catch (e) {
+		console.error(`[curl] non-json from ${url}: ${stdout.slice(0, 120)}`);
+		throw e;
+	}
+}
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) throw new Error("DATABASE_URL is required");
@@ -237,13 +255,17 @@ async function collectAster() {
 	await collectBinanceLike(
 		"aster",
 		"https://fapi.asterdex.com/fapi/v1",
-		new Set(["STOCK", "RWA", "Metals"])
+		new Set(["STOCK", "RWA", "Metals", "Commodities", "ETF"])
 	);
 }
 
 async function collectEdgeX() {
 	const base = "https://pro.edgex.exchange/api/v1/public";
-	const meta = (await fetch(`${base}/meta/getMetaData`).then((r) => r.json())) as {
+	// edgex is fronted by Cloudflare and bot-checks both Node fetch (TLS
+	// fingerprint) and parallel curl bursts. We use sequential curl with a
+	// small delay between calls; even so, the first attempt from a hot dev IP
+	// often gets a Cloudflare interstitial. Retry the seed if it fails.
+	const meta = await curlJson<{
 		data: {
 			contractList: {
 				contractId: string;
@@ -251,28 +273,29 @@ async function collectEdgeX() {
 				riskTierList: { maxLeverage: string }[];
 			}[];
 		};
-	};
+	}>(`${base}/meta/getMetaData`);
 	const contracts = meta.data.contractList;
 	const ids = contracts.map((c) => ({
 		id: c.contractId,
 		name: c.contractName,
 		lev: Number(c.riskTierList?.[0]?.maxLeverage ?? 0)
 	}));
-	const tickers = await Promise.all(
-		ids.map((c) =>
-			fetch(`${base}/quote/getTicker?period=LAST_DAY_1&contractId=${c.id}`).then(
-				(r) =>
-					r.json() as Promise<{
-						data: {
-							contractName: string;
-							value: string;
-							lastPrice: string;
-							openInterest: string;
-						}[];
-					}>
-			)
-		)
-	);
+	type T = {
+		data: { contractName: string; value: string; lastPrice: string; openInterest: string }[];
+	};
+	const tickers: T[] = [];
+	for (const c of ids) {
+		try {
+			const r = await curlJson<T>(
+				`${base}/quote/getTicker?period=LAST_DAY_1&contractId=${c.id}`
+			);
+			tickers.push(r);
+		} catch {
+			tickers.push({ data: [] });
+		}
+		// Cloudflare on edgex throttles parallel bursts; pace serial requests.
+		await new Promise((r) => setTimeout(r, 75));
+	}
 	let count = 0;
 	tickers.forEach((resp, i) => {
 		const m = resp.data?.[0];

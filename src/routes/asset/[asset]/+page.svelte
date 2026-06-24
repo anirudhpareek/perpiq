@@ -11,6 +11,7 @@
 	import type { Meta as MetaT, TickerCfg } from "$lib/types";
 	import MarketTable from "$components/table/MarketTable.svelte";
 	import AssetIntelligence from "$components/intelligence/AssetIntelligence.svelte";
+	import UnderlyingEquity from "$components/intelligence/UnderlyingEquity.svelte";
 	import type { WithContext, FinancialProduct } from "schema-dts";
 
 	let { data }: PageProps = $props();
@@ -107,6 +108,9 @@
 
 <!-- Intelligence panel -->
 <AssetIntelligence {snapshot} assetId={data.asset} />
+
+<!-- Underlying equity context (stocks only) -->
+<UnderlyingEquity {snapshot} assetId={data.asset} category={asset.category} />
 
 <!-- Market table -->
 <div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">
