@@ -10,6 +10,7 @@
 	import Numeric from "$components/Numeric.svelte";
 	import type { Meta as MetaT, TickerCfg } from "$lib/types";
 	import MarketTable from "$components/table/MarketTable.svelte";
+	import AssetIntelligence from "$components/intelligence/AssetIntelligence.svelte";
 	import type { WithContext, FinancialProduct } from "schema-dts";
 
 	let { data }: PageProps = $props();
@@ -103,6 +104,9 @@
 		</Card>
 	</Grid>
 </div>
+
+<!-- Intelligence panel -->
+<AssetIntelligence {snapshot} assetId={data.asset} />
 
 <!-- Market table -->
 <div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">

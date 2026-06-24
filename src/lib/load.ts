@@ -1,5 +1,6 @@
-import db from "$lib/db";
+import { env } from "$env/dynamic/private";
 import { plainifyEntries } from "$lib/serialize";
+import { buildFixtureSnapshot } from "$lib/fixture";
 import { buildSnapshot, buildDiffedSnapshot, type DiffedSnapshot } from "$lib/transform";
 
 // One day in milliseconds
@@ -13,6 +14,15 @@ const P0_VENUES: readonly string[] = ["hyperliquid", "binance", "lighter"];
  * @returns {Promise<{ snapshot: DiffedSnapshot }>} aggregated snapshot data
  */
 export async function loadSnapshot(): Promise<{ snapshot: DiffedSnapshot }> {
+	// Dev fallback: when no DATABASE_URL is configured, serve a synthetic fixture
+	// so the UI can be exercised locally without Postgres + collectors.
+	if (!env.DATABASE_URL) {
+		return buildFixtureSnapshot();
+	}
+
+	// Lazy-import Prisma client only when actually needed
+	const { default: db } = await import("$lib/db");
+
 	// Running as a transaction to naively minimize serverless function roundtrips
 	const { prevEntries, currEntries } = await db.$transaction(async (tx) => {
 		// Collect latest batch ID

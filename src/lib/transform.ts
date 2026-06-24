@@ -88,6 +88,11 @@ type Snapshot = {
 	};
 };
 
+// Surfaced on the diffed snapshot so consumers can distinguish "new" from
+// "unchanged" without re-loading the previous batch. `change()` returns 0 for
+// both cases, so a flag is required.
+type NewFlag = { isNew: boolean };
+
 // Statistics w/ diffed change across two `Snapshot`(s) of data
 export type DiffedSnapshot = {
 	meta: Snapshot["meta"] & {
@@ -99,26 +104,28 @@ export type DiffedSnapshot = {
 
 	assets: Record<
 		string,
-		Snapshot["assets"][string] & {
-			// Change across two snapshots in asset median refPx
-			medianRefPxChange: number;
-			// Change across two snapshots in asset volume
-			volumeChange: number;
-			// Change across two snapshots in asset OI
-			oiChange: number;
-		}
+		Snapshot["assets"][string] &
+			NewFlag & {
+				// Change across two snapshots in asset median refPx
+				medianRefPxChange: number;
+				// Change across two snapshots in asset volume
+				volumeChange: number;
+				// Change across two snapshots in asset OI
+				oiChange: number;
+			}
 	>;
 
 	markets: Record<
 		string,
-		Snapshot["markets"][string] & {
-			// Change across two snapshots in market refPx
-			refPxChange: number;
-			// Change across two snapshots in market volume
-			volumeChange: number;
-			// Change across two snapshots in market OI
-			oiChange: number;
-		}
+		Snapshot["markets"][string] &
+			NewFlag & {
+				// Change across two snapshots in market refPx
+				refPxChange: number;
+				// Change across two snapshots in market volume
+				volumeChange: number;
+				// Change across two snapshots in market OI
+				oiChange: number;
+			}
 	>;
 
 	// Updated to include historic index lookup
@@ -127,11 +134,14 @@ export type DiffedSnapshot = {
 		marketsByVenue: Record<string, string[]>;
 	};
 
-	aggregates: Snapshot["aggregates"] & {
+	aggregates: Omit<Snapshot["aggregates"], "oiByVenue"> & {
 		// Change across two snapshots in total volume
 		volumeChange: number;
 		// Changea cross two snapshots in total OI
 		oiChange: number;
+		// Venue OI share with delta vs previous snapshot's share (absolute, not %).
+		// Positive `oiShareChange` = venue gaining dominance.
+		oiByVenue: { venue: string; oiShare: number; oiShareChange: number }[];
 	};
 };
 
@@ -313,6 +323,7 @@ export function buildDiffedSnapshot(previous: Snapshot, current: Snapshot): Diff
 
 		markets[key] = {
 			...market,
+			isNew: !previousMarket,
 			refPxChange: change(previousMarket?.refPx, market.refPx),
 			volumeChange: change(previousMarket?.volume, market.volume),
 			oiChange: change(previousMarket?.oi, market.oi)
@@ -327,6 +338,7 @@ export function buildDiffedSnapshot(previous: Snapshot, current: Snapshot): Diff
 
 		assets[id] = {
 			...asset,
+			isNew: !previousAsset,
 			medianRefPxChange: change(previousAsset?.medianRefPx, asset.medianRefPx),
 			volumeChange: change(previousAsset?.volume, asset.volume),
 			oiChange: change(previousAsset?.oi, asset.oi)
@@ -351,8 +363,19 @@ export function buildDiffedSnapshot(previous: Snapshot, current: Snapshot): Diff
 	}
 
 	// --- 5: Update aggregates w/ volume diff ---
+	const prevOiShareByVenue = new Map(
+		previous.aggregates.oiByVenue.map((v) => [v.venue, v.oiShare])
+	);
+	const oiByVenue: DiffedSnapshot["aggregates"]["oiByVenue"] = current.aggregates.oiByVenue.map(
+		(v) => ({
+			venue: v.venue,
+			oiShare: v.oiShare,
+			oiShareChange: v.oiShare - (prevOiShareByVenue.get(v.venue) ?? 0)
+		})
+	);
 	const aggregates: DiffedSnapshot["aggregates"] = {
 		...current.aggregates,
+		oiByVenue,
 		volumeChange: change(previous.aggregates.volume, current.aggregates.volume),
 		oiChange: change(previous.aggregates.oi, current.aggregates.oi)
 	};

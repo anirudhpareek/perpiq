@@ -4,6 +4,7 @@
 	import Numeric from "$components/Numeric.svelte";
 	import DitherHero from "$components/DitherHero.svelte";
 	import AssetTable from "$components/table/AssetTable.svelte";
+	import HomepageIntelligence from "$components/intelligence/HomepageIntelligence.svelte";
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot);
@@ -30,6 +31,9 @@
 		</div>
 	</DitherHero>
 </div>
+
+<!-- Market intelligence -->
+<HomepageIntelligence {snapshot} />
 
 <!-- Tabular data -->
 <section class="flex max-w-full flex-1 flex-row justify-center">

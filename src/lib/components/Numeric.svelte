@@ -8,21 +8,11 @@
 		maximumFractionDigits: 2
 	});
 
-	/**
-	 * Format number as US-denominated currency (2 fixed decimals, commas)
-	 * @param {number} n to format
-	 * @return {string} formatted string
-	 */
-	function formatNumeric(n: number): string {
+	function formatNumeric(n) {
 		return numericFmt.format(n);
 	}
 
-	/**
-	 * Format number as US-denominated currency but with suffix
-	 * @param {number} n to format
-	 * @return {string} formatted string
-	 */
-	export function truncateCurrency(n: number): string {
+	export function truncateCurrency(n) {
 		const abs = Math.abs(n);
 		if (abs >= BILLION) return formatNumeric(n / BILLION) + "B";
 		if (abs >= MILLION) return formatNumeric(n / MILLION) + "M";
@@ -30,26 +20,11 @@
 		return formatNumeric(n);
 	}
 
-	/**
-	 * Quote currency, normalized by configuration
-	 * @param {string} exchange `venue:namespace`
-	 * @param {string?} quote optional base quote currency
-	 * @param {Record<string, string>?} quotes optional venue-specific currency override
-	 */
-	export function getNormalizedCurrency(
-		exchange: string,
-		quote?: string,
-		quotes?: Record<string, string>
-	): string {
-		// If venue-specific quote exists, return indexed
+	export function getNormalizedCurrency(exchange, quote, quotes) {
 		if (quotes && Object.keys(quotes).includes(exchange)) {
 			return quotes[exchange];
 		}
-
-		// Otherwise, if base quote exists, return base
 		if (quote) return quote;
-
-		// Else, return USD
 		return "USD";
 	}
 </script>
