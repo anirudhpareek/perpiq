@@ -1,17 +1,9 @@
 import { error } from "@sveltejs/kit";
 import exchanges from "$config/exchanges.json";
-import type { PageLoad, EntryGenerator } from "./$types";
+import type { PageLoad } from "./$types";
 
 // Valid exchanges (`hyperliquid:`, `hyperliquid:xyz`)
 const VALID_EXCHANGES: readonly string[] = Object.keys(exchanges);
-
-// Statically generate all possible venue pages
-export const entries: EntryGenerator = () => {
-	return VALID_EXCHANGES.map((exchange) => {
-		const [venue, dex] = exchange.split(":");
-		return dex !== "" ? { venue, path: `dex/${dex}` } : { venue, path: "" };
-	});
-};
 
 export const load: PageLoad = ({ params }) => {
 	// Collect path

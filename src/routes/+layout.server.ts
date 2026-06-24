@@ -1,12 +1,15 @@
 import { loadSnapshot } from "$lib/load";
 import type { DiffedSnapshot } from "$lib/transform";
 
-// Collect `snapshot` state from database; hot-cached via ISR
-export async function load(): Promise<{ snapshot: DiffedSnapshot }> {
+// Server-render with short edge cache so /api/jobs/seed updates surface to
+// users within 60s without rebuilding the site. CDN absorbs the load.
+export async function load({
+	setHeaders
+}: {
+	setHeaders: (headers: Record<string, string>) => void;
+}): Promise<{ snapshot: DiffedSnapshot }> {
+	setHeaders({
+		"cache-control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
+	});
 	return await loadSnapshot();
 }
-
-// Prerender all pages
-// @dev: careful not to reference API routes in
-// 			 `load`(s) else it will prerender those too
-export const prerender = true;
