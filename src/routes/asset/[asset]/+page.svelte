@@ -5,7 +5,6 @@
 	import Grid from "$components/Grid.svelte";
 	import tickers from "$config/tickers.json";
 	import Icon from "$components/Icon.svelte";
-	import Card from "$components/Card.svelte";
 	import metaConfig from "$config/meta.json";
 	import Numeric from "$components/Numeric.svelte";
 	import type { Meta as MetaT, TickerCfg } from "$lib/types";
@@ -69,24 +68,68 @@
 
 <Meta {title} {schema} />
 
-<!-- Asset header -->
+<!-- Asset header (uniswap-inspired: identity, then large price + stats inline) -->
 <div>
 	<Grid bottom={false}>
-		<div class="flex flex-1 flex-col px-4 py-6">
-			<!-- Icon, name -->
-			<div class="flex flex-row items-center gap-2">
-				<Icon
-					src={meta.icon}
-					alt={meta.name}
-					class="{meta.icon.length > 1
-						? 'size-9.5 md:size-11'
-						: ''} [&_img]:size-6 md:[&_img]:size-7"
-				/>
-				<h1 class="text-lg text-gecko-white md:text-xl">{meta.name}</h1>
+		<div class="flex flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:items-start md:gap-10">
+			<!-- Left: identity + description -->
+			<div class="flex flex-1 flex-col">
+				<div class="flex flex-row items-center gap-3">
+					<Icon
+						src={meta.icon}
+						alt={meta.name}
+						class="{meta.icon.length > 1
+							? 'size-9.5 md:size-12'
+							: ''} [&_img]:size-7 md:[&_img]:size-8"
+					/>
+					<div class="flex flex-col">
+						<h1 class="text-xl text-gecko-white md:text-2xl">{meta.name}</h1>
+						<span class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/70">
+							{data.asset}{asset?.category ? ` · ${asset.category}` : ""}
+						</span>
+					</div>
+				</div>
+				<p class="mt-4 max-w-2xl text-xs text-gecko-gray/75 md:text-sm">{meta.description}</p>
 			</div>
 
-			<!-- Description -->
-			<p class="mt-3 text-xs text-gecko-gray/75 md:text-sm">{meta.description}</p>
+			{#if hasData && asset}
+				<!-- Right: hero price + tiny stats grid -->
+				<div class="flex flex-col items-start md:min-w-[280px] md:items-end">
+					<div class="flex items-baseline gap-2">
+						<Numeric
+							value={asset.medianRefPx}
+							format="numeric"
+							currency={meta.quote ?? "USD"}
+							class="text-3xl text-gecko-white md:text-4xl"
+						/>
+					</div>
+					<div class="mt-1 flex items-baseline gap-2">
+						<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
+						<span class="text-xs text-gecko-gray/60">24h</span>
+					</div>
+
+					<div class="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+						<div class="flex flex-col md:items-end">
+							<span class="text-[10px] uppercase tracking-wide text-gecko-gray/60">Vol 24h</span>
+							<Numeric
+								value={asset.volume}
+								format="currency"
+								currency="USD"
+								class="text-gecko-white"
+							/>
+						</div>
+						<div class="flex flex-col md:items-end">
+							<span class="text-[10px] uppercase tracking-wide text-gecko-gray/60">OI</span>
+							<Numeric
+								value={asset.oi}
+								format="currency"
+								currency="USD"
+								class="text-gecko-white"
+							/>
+						</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</Grid>
 </div>
@@ -105,38 +148,6 @@
 {/if}
 
 {#if hasData && asset}
-<!-- Aggregate statistics -->
-<div>
-	<Grid>
-		<Card title="Price">
-			<div class="flex gap-2 p-4 text-lg">
-				<!-- Always prefer base quote currency -->
-				<Numeric
-					value={asset.medianRefPx}
-					format="numeric"
-					currency={meta.quote ?? "USD"}
-					class="text-gecko-white"
-				/>
-				<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
-			</div>
-		</Card>
-
-		<Card title="Volume">
-			<div class="flex gap-2 p-4 text-lg">
-				<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage />
-			</div>
-		</Card>
-
-		<Card title="Open Interest">
-			<div class="flex gap-2 p-4 text-lg">
-				<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric value={asset.oiChange * 100} format="numeric" change percentage />
-			</div>
-		</Card>
-	</Grid>
-</div>
-
 <!-- Intelligence panel -->
 <AssetIntelligence {snapshot} assetId={data.asset} />
 

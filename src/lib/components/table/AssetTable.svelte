@@ -11,16 +11,28 @@
 	import { goto, preloadCode, preloadData } from "$app/navigation";
 	import { createSortState, sortRows, type Column } from "$components/table/table.svelte";
 
-	let { snapshot }: { snapshot: DiffedSnapshot } = $props();
+	let {
+		snapshot,
+		category = "all"
+	}: { snapshot: DiffedSnapshot; category?: string } = $props();
 
 	// Setup sortable table
 	type AssetKey = keyof DiffedSnapshot["assets"][0];
 	const sort = createSortState<AssetKey>("volume");
 
+	// Filter by category before sorting
+	const filtered = $derived(
+		category === "all"
+			? snapshot.index.assetsByVolume
+			: snapshot.index.assetsByVolume.filter(
+					(r) => snapshot.assets[r.asset]?.category === category
+				)
+	);
+
 	// Sorted rows
 	const rows = $derived(
 		sortRows(
-			[...snapshot.index.assetsByVolume],
+			[...filtered],
 			(row, key: AssetKey) => snapshot.assets[row.asset][key!] as string | number,
 			sort.key,
 			sort.direction

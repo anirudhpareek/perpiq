@@ -4,18 +4,21 @@
 	import Numeric from "$components/Numeric.svelte";
 	import DitherHero from "$components/DitherHero.svelte";
 	import AssetTable from "$components/table/AssetTable.svelte";
+	import FeaturedMovers from "$components/FeaturedMovers.svelte";
+	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
 	import HomepageIntelligence from "$components/intelligence/HomepageIntelligence.svelte";
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot);
+
+	let category = $state<Category>("all");
 </script>
 
 <Meta />
 
 <!-- Hero -->
-<div class="flex min-h-96 flex-row justify-center border-b border-b-gecko-shade">
+<div class="flex min-h-72 flex-row justify-center border-b border-b-gecko-shade md:min-h-96">
 	<DitherHero class="flex flex-1 flex-col">
-		<!-- CTA -->
 		<div class="flex flex-1 items-center justify-center">
 			<div class="flex max-w-xl flex-col items-center justify-center px-8 text-center lg:px-4">
 				<h1 class="text-3xl font-bold text-gecko-white sm:text-5xl">TradFi lives on-chain.</h1>
@@ -32,10 +35,16 @@
 	</DitherHero>
 </div>
 
+<!-- Featured cards (uniswap-style hero strip) -->
+<FeaturedMovers {snapshot} />
+
 <!-- Market intelligence -->
 <HomepageIntelligence {snapshot} />
 
+<!-- Category filter -->
+<CategoryPills bind:value={category} />
+
 <!-- Tabular data -->
 <section class="flex max-w-full flex-1 flex-row justify-center">
-	<AssetTable {snapshot} />
+	<AssetTable {snapshot} {category} />
 </section>
