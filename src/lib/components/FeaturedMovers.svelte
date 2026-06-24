@@ -2,11 +2,15 @@
 	import Icon from "$components/Icon.svelte";
 	import tickers from "$config/tickers.json";
 	import Numeric from "$components/Numeric.svelte";
+	import Sparkline from "$components/Sparkline.svelte";
 	import { goto, preloadCode, preloadData } from "$app/navigation";
 	import type { TickerCfg } from "$lib/types";
 	import type { DiffedSnapshot } from "$lib/transform";
 
-	let { snapshot }: { snapshot: DiffedSnapshot } = $props();
+	let {
+		snapshot,
+		sparklines = {}
+	}: { snapshot: DiffedSnapshot; sparklines?: Record<string, number[]> } = $props();
 
 	// Pick 4 hero cards. We blend "most volume" with one notable mover so the
 	// strip stays interesting even when 24h diffs are zero on cold runs.
@@ -73,19 +77,24 @@
 								</span>
 							</div>
 
-							<div class="mt-3 flex items-baseline gap-2">
-								<Numeric
-									value={asset.medianRefPx}
-									format="numeric"
-									currency={m.quote ?? "USD"}
-									class="text-lg text-gecko-white"
-								/>
-								<Numeric
-									value={asset.medianRefPxChange * 100}
-									format="numeric"
-									change
-									percentage
-								/>
+							<div class="mt-3 flex items-baseline justify-between gap-2">
+								<div class="flex items-baseline gap-2">
+									<Numeric
+										value={asset.medianRefPx}
+										format="numeric"
+										currency={m.quote ?? "USD"}
+										class="text-lg text-gecko-white"
+									/>
+									<Numeric
+										value={asset.medianRefPxChange * 100}
+										format="numeric"
+										change
+										percentage
+									/>
+								</div>
+								{#if sparklines[id]?.length}
+									<Sparkline series={sparklines[id]} width={70} height={26} />
+								{/if}
 							</div>
 
 							<div class="mt-3 flex items-center justify-between text-xs">

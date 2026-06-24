@@ -11,6 +11,7 @@
 	import MarketTable from "$components/table/MarketTable.svelte";
 	import AssetIntelligence from "$components/intelligence/AssetIntelligence.svelte";
 	import UnderlyingEquity from "$components/intelligence/UnderlyingEquity.svelte";
+	import RelatedAssets from "$components/RelatedAssets.svelte";
 	import type { WithContext, FinancialProduct } from "schema-dts";
 
 	let { data }: PageProps = $props();
@@ -158,4 +159,12 @@
 <div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">
 	<MarketTable filter={{ assetId: data.asset }} {snapshot} />
 </div>
+
+<!-- Related assets in same class -->
+<RelatedAssets
+	{snapshot}
+	assetId={data.asset}
+	category={asset.category}
+	sparklines={data.sparklines ?? {}}
+/>
 {/if}

@@ -1,190 +1,245 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import Card from "$components/Card.svelte";
-	import Grid from "$components/Grid.svelte";
 	import Icon from "$components/Icon.svelte";
 	import tickers from "$config/tickers.json";
 	import Numeric from "$components/Numeric.svelte";
 	import exchanges from "$config/exchanges.json";
+	import Sparkline from "$components/Sparkline.svelte";
 	import type { ExchangeCfg, TickerCfg } from "$lib/types";
 	import type { DiffedSnapshot } from "$lib/transform";
-	import { buildHomepageIntelligence } from "$lib/intelligence";
+	import { buildHomepageIntelligence, computePriceDivergence } from "$lib/intelligence";
 
-	let { snapshot }: { snapshot: DiffedSnapshot } = $props();
+	let {
+		snapshot,
+		sparklines = {}
+	}: { snapshot: DiffedSnapshot; sparklines?: Record<string, number[]> } = $props();
 
 	const intel = $derived(buildHomepageIntelligence(snapshot));
 
-	const assetIndex = Object.values(tickers.perps as TickerCfg).reduce<
-		Record<string, { name: string; icon: string[]; category: string }>
-	>((acc, group) => {
-		for (const [id, def] of Object.entries(group)) {
-			acc[id] = { name: def.meta.name, icon: def.meta.icon, category: "" };
-		}
-		return acc;
-	}, {});
+	// Build a "top movers" view that ALWAYS has data — we sort by absolute
+	// change (volume + OI both surface high-conviction movers) and just take
+	// whatever the top N is. No threshold gate, so the panel is never empty.
+	type MoverRow = {
+		assetId: string;
+		volume: number;
+		volumeChange: number;
+		oi: number;
+		oiChange: number;
+		priceChange: number;
+	};
+	const allRows: MoverRow[] = $derived(
+		Object.entries(snapshot.assets)
+			.filter(([, a]) => !a.isNew && a.volume > 0)
+			.map(([id, a]) => ({
+				assetId: id,
+				volume: a.volume,
+				volumeChange: a.volumeChange,
+				oi: a.oi,
+				oiChange: a.oiChange,
+				priceChange: a.medianRefPxChange
+			}))
+	);
 
+	type TabId = "gainers" | "losers" | "oi_up" | "oi_down" | "spreads" | "new";
+	let tab = $state<TabId>("gainers");
+
+	const tabs: { id: TabId; label: string }[] = [
+		{ id: "gainers", label: "Gainers" },
+		{ id: "losers", label: "Losers" },
+		{ id: "oi_up", label: "OI inflows" },
+		{ id: "oi_down", label: "OI outflows" },
+		{ id: "spreads", label: "Spreads" },
+		{ id: "new", label: "New markets" }
+	];
+
+	const ticks = tickers.perps as TickerCfg;
 	function assetMeta(id: string) {
-		return assetIndex[id];
+		for (const cat of Object.values(ticks)) {
+			if (cat[id]) return cat[id].meta;
+		}
+		return null;
 	}
-
 	function exchangeMeta(venue: string, namespace: string) {
 		return (exchanges as ExchangeCfg)[`${venue}:${namespace}`];
 	}
 
-	function fmtBps(n: number): string {
-		return `${n.toFixed(0)} bps`;
+	function fmtPct(x: number): string {
+		const sign = x > 0 ? "+" : "";
+		return `${sign}${(x * 100).toFixed(2)}%`;
+	}
+	function fmtBps(x: number): string {
+		return `${x.toFixed(0)} bps`;
 	}
 
-	function fmtPctChange(x: number): string {
-		const sign = x > 0 ? "+" : "";
-		return `${sign}${(x * 100).toFixed(1)}%`;
+	const ROW_LIMIT = 8;
+
+	type ViewRow = {
+		assetId: string;
+		primary: string;
+		primaryTone: "up" | "down" | "neutral";
+		secondary?: string;
+		venueIcon?: { icon: string[]; name: string };
+	};
+
+	const rows = $derived.by<ViewRow[]>(() => {
+		switch (tab) {
+			case "gainers":
+				return [...allRows]
+					.filter((r) => r.priceChange !== 0)
+					.sort((a, b) => b.priceChange - a.priceChange)
+					.slice(0, ROW_LIMIT)
+					.map((r) => ({
+						assetId: r.assetId,
+						primary: fmtPct(r.priceChange),
+						primaryTone: r.priceChange >= 0 ? "up" : "down",
+						secondary: `Vol ${nice(r.volume)}`
+					}));
+			case "losers":
+				return [...allRows]
+					.filter((r) => r.priceChange !== 0)
+					.sort((a, b) => a.priceChange - b.priceChange)
+					.slice(0, ROW_LIMIT)
+					.map((r) => ({
+						assetId: r.assetId,
+						primary: fmtPct(r.priceChange),
+						primaryTone: r.priceChange >= 0 ? "up" : "down",
+						secondary: `Vol ${nice(r.volume)}`
+					}));
+			case "oi_up":
+				return [...allRows]
+					.sort((a, b) => b.oiChange - a.oiChange)
+					.slice(0, ROW_LIMIT)
+					.map((r) => ({
+						assetId: r.assetId,
+						primary: fmtPct(r.oiChange),
+						primaryTone: r.oiChange >= 0 ? "up" : "down",
+						secondary: `OI ${nice(r.oi)}`
+					}));
+			case "oi_down":
+				return [...allRows]
+					.sort((a, b) => a.oiChange - b.oiChange)
+					.slice(0, ROW_LIMIT)
+					.map((r) => ({
+						assetId: r.assetId,
+						primary: fmtPct(r.oiChange),
+						primaryTone: r.oiChange >= 0 ? "up" : "down",
+						secondary: `OI ${nice(r.oi)}`
+					}));
+			case "spreads": {
+				const spreads = Object.keys(snapshot.assets)
+					.map((id) => {
+						const d = computePriceDivergence(snapshot, id);
+						return d ? { assetId: id, bps: d.bps } : null;
+					})
+					.filter((x): x is { assetId: string; bps: number } => !!x)
+					.sort((a, b) => b.bps - a.bps)
+					.slice(0, ROW_LIMIT);
+				return spreads.map((s) => ({
+					assetId: s.assetId,
+					primary: fmtBps(s.bps),
+					primaryTone: "neutral",
+					secondary: "cross-venue"
+				}));
+			}
+			case "new":
+				return intel.newMarkets.map((m) => ({
+					assetId: m.assetId,
+					primary: nice(m.volume),
+					primaryTone: "up",
+					secondary: "first batch",
+					venueIcon: (() => {
+						const ex = exchangeMeta(m.venue, m.namespace);
+						return ex ? { icon: ex.icon, name: ex.name } : undefined;
+					})()
+				}));
+		}
+	});
+
+	function nice(n: number): string {
+		const sign = n < 0 ? "-" : "";
+		const x = Math.abs(n);
+		if (x >= 1e9) return `${sign}$${(x / 1e9).toFixed(2)}B`;
+		if (x >= 1e6) return `${sign}$${(x / 1e6).toFixed(2)}M`;
+		if (x >= 1e3) return `${sign}$${(x / 1e3).toFixed(2)}K`;
+		return `${sign}$${x.toFixed(0)}`;
 	}
 </script>
 
-{#snippet assetRow(id: string, valueLabel: string, accent: "up" | "down" | "neutral", volume: number | null)}
-	{@const meta = assetMeta(id)}
-	{#if meta}
-		<button
-			type="button"
-			onclick={() => goto(`/asset/${id}`)}
-			class="flex w-full items-center gap-2 border-t border-t-gecko-shade/60 px-4 py-2 text-xs first:border-t-0 hover:bg-gecko-black-hover"
-		>
-			<div class="flex w-6 items-center justify-center">
-				<Icon src={meta.icon} alt={meta.name} />
-			</div>
-			<span class="flex-1 text-left text-gecko-white">{meta.name}</span>
-			{#if volume !== null}
-				<span class="hidden w-20 text-right md:inline">
-					<Numeric value={volume} format="currency" currency="USD" class="text-gecko-gray" />
+<section class="border-b border-b-gecko-shade">
+	<div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:px-8">
+		<!-- Section header -->
+		<div class="flex flex-col gap-1">
+			<div class="flex items-baseline gap-3">
+				<h2 class="text-base font-medium text-gecko-white md:text-lg">Market intelligence</h2>
+				<span class="text-xs text-gecko-gray/60">
+					Derived from real-time RWA perp market data
 				</span>
-			{/if}
-			<span
-				class="w-20 text-right font-mono {accent === 'up'
-					? 'text-green-400'
-					: accent === 'down'
-						? 'text-red-400'
-						: 'text-gecko-white'}"
-			>
-				{valueLabel}
-			</span>
-		</button>
-	{/if}
-{/snippet}
+			</div>
+		</div>
 
-{#snippet movers(title: string, rows: { assetId: string; value: number; volume: number }[], direction: "up" | "down")}
-	<Card {title}>
-		<div class="flex flex-1 flex-col">
+		<!-- Tabs (uniswap-style chips) -->
+		<div class="flex flex-wrap items-center gap-1.5">
+			{#each tabs as t}
+				<button
+					type="button"
+					onclick={() => (tab = t.id)}
+					class="rounded-sm border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide transition {tab ===
+					t.id
+						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
+						: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
+				>
+					{t.label}
+				</button>
+			{/each}
+		</div>
+
+		<!-- Rows -->
+		<div class="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
 			{#if rows.length === 0}
-				<div class="p-4 text-xs text-gecko-gray/75">No qualifying signals in last 24h.</div>
+				<div class="col-span-full rounded-md border border-gecko-shade/60 bg-gecko-shade/10 px-4 py-6 text-xs text-gecko-gray/70">
+					No qualifying entries yet — wait for the next batch.
+				</div>
 			{:else}
 				{#each rows as r}
-					{@render assetRow(r.assetId, fmtPctChange(r.value), direction, r.volume)}
+					{@const m = assetMeta(r.assetId)}
+					{#if m}
+						<button
+							type="button"
+							onclick={() => goto(`/asset/${r.assetId}`)}
+							class="group flex items-center gap-3 rounded-sm border border-transparent px-2 py-2 text-left transition hover:border-gecko-shade hover:bg-gecko-shade/30"
+						>
+							<div class="flex w-7 items-center justify-center">
+								<Icon src={m.icon} alt={m.name} />
+							</div>
+							<div class="flex flex-1 flex-col">
+								<span class="text-sm text-gecko-white">{m.name}</span>
+								<span class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/60">
+									{r.secondary}
+								</span>
+							</div>
+							{#if sparklines[r.assetId]?.length}
+								<div class="hidden text-gecko-gray sm:block">
+									<Sparkline series={sparklines[r.assetId]} width={64} height={20} />
+								</div>
+							{/if}
+							{#if r.venueIcon}
+								<div class="flex w-6 items-center justify-center">
+									<Icon src={r.venueIcon.icon} alt={r.venueIcon.name} nested />
+								</div>
+							{/if}
+							<span
+								class="w-24 text-right font-mono text-xs {r.primaryTone === 'up'
+									? 'text-emerald-400'
+									: r.primaryTone === 'down'
+										? 'text-red-400'
+										: 'text-gecko-white'}"
+							>
+								{r.primary}
+							</span>
+						</button>
+					{/if}
 				{/each}
 			{/if}
 		</div>
-	</Card>
-{/snippet}
-
-<!-- Section header -->
-<div>
-	<Grid bottom={false}>
-		<div class="flex flex-1 flex-col gap-0.5 px-4 py-6">
-			<h2 class="text-lg text-gecko-white md:text-xl">Market intelligence</h2>
-			<p class="text-xs text-gecko-gray/75 md:text-sm">
-				Notable 24h moves across volume, open interest, cross-venue price spread, and new listings.
-				Signals are derived from collected market data only.
-			</p>
-		</div>
-	</Grid>
-</div>
-
-<!-- Row 1: volume + OI movers -->
-<div>
-	<Grid bottom={false}>
-		{@render movers("Top volume spikes", intel.volumeSpikes, "up")}
-		{@render movers("Top volume drops", intel.volumeDrops, "down")}
-	</Grid>
-</div>
-
-<div>
-	<Grid bottom={false}>
-		{@render movers("Top OI spikes", intel.oiSpikes, "up")}
-		{@render movers("Top OI drops", intel.oiDrops, "down")}
-	</Grid>
-</div>
-
-<!-- Row 2: cross-venue spreads + new listings -->
-<div>
-	<Grid bottom={false}>
-		<Card title="Largest cross-venue spreads">
-			<div class="flex flex-1 flex-col">
-				{#if intel.largestDivergences.length === 0}
-					<div class="p-4 text-xs text-gecko-gray/75">No spreads above threshold.</div>
-				{:else}
-					{#each intel.largestDivergences as d}
-						{@render assetRow(d.assetId, fmtBps(d.bps), "neutral", null)}
-					{/each}
-				{/if}
-			</div>
-		</Card>
-
-		<Card title="New markets">
-			<div class="flex flex-1 flex-col">
-				{#if intel.newMarkets.length === 0}
-					<div class="p-4 text-xs text-gecko-gray/75">No new listings in latest batch.</div>
-				{:else}
-					{#each intel.newMarkets as m}
-						{@const a = assetMeta(m.assetId)}
-						{@const ex = exchangeMeta(m.venue, m.namespace)}
-						{#if a && ex}
-							<button
-								type="button"
-								onclick={() => goto(`/asset/${m.assetId}`)}
-								class="flex w-full items-center gap-2 border-t border-t-gecko-shade/60 px-4 py-2 text-xs first:border-t-0 hover:bg-gecko-black-hover"
-							>
-								<div class="flex w-6 items-center justify-center">
-									<Icon src={a.icon} alt={a.name} />
-								</div>
-								<span class="flex-1 text-left text-gecko-white">{a.name}</span>
-								<div class="flex w-6 items-center justify-center">
-									<Icon src={ex.icon} alt={ex.name} nested />
-								</div>
-								<span class="hidden w-24 text-right text-gecko-gray md:inline">{ex.name}</span>
-								<span class="w-20 text-right">
-									<Numeric value={m.volume} format="currency" currency="USD" class="text-gecko-white" />
-								</span>
-							</button>
-						{/if}
-					{/each}
-				{/if}
-			</div>
-		</Card>
-	</Grid>
-</div>
-
-<!-- Row 3: venue dominance shifts -->
-{#if intel.venueShifts.length > 0}
-	<div>
-		<Grid bottom={false}>
-			<Card title="Venue dominance shifts (OI share)">
-				<div class="flex flex-1 flex-col">
-					{#each intel.venueShifts as v}
-						<div class="flex w-full items-center gap-2 border-t border-t-gecko-shade/60 px-4 py-2 text-xs first:border-t-0">
-							<span class="flex-1 text-gecko-white">{v.venue}</span>
-							<span class="w-24 text-right font-mono text-gecko-gray">
-								{(v.oiShare * 100).toFixed(1)}% share
-							</span>
-							<span
-								class="w-24 text-right font-mono {v.oiShareChange > 0
-									? 'text-green-400'
-									: 'text-red-400'}"
-							>
-								{v.oiShareChange > 0 ? "+" : ""}{(v.oiShareChange * 100).toFixed(2)} pp
-							</span>
-						</div>
-					{/each}
-				</div>
-			</Card>
-		</Grid>
 	</div>
-{/if}
+</section>

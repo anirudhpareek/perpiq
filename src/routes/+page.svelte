@@ -10,6 +10,7 @@
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot);
+	const sparklines = $derived(data.sparklines ?? {});
 
 	let category = $state<Category>("all");
 </script>
@@ -36,15 +37,15 @@
 </div>
 
 <!-- Featured cards (uniswap-style hero strip) -->
-<FeaturedMovers {snapshot} />
+<FeaturedMovers {snapshot} {sparklines} />
 
 <!-- Market intelligence -->
-<HomepageIntelligence {snapshot} />
+<HomepageIntelligence {snapshot} {sparklines} />
 
 <!-- Category filter -->
 <CategoryPills bind:value={category} />
 
 <!-- Tabular data -->
 <section class="flex max-w-full flex-1 flex-row justify-center">
-	<AssetTable {snapshot} {category} />
+	<AssetTable {snapshot} {category} {sparklines} />
 </section>

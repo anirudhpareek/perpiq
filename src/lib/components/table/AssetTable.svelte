@@ -4,6 +4,7 @@
 	import Icon from "$components/Icon.svelte";
 	import exchanges from "$config/exchanges.json";
 	import Numeric from "$components/Numeric.svelte";
+	import Sparkline from "$components/Sparkline.svelte";
 	import type { DiffedSnapshot } from "$lib/transform";
 	import IconScroll from "$components/IconScroll.svelte";
 	import type { ExchangeCfg, TickerCfg } from "$lib/types";
@@ -13,8 +14,10 @@
 
 	let {
 		snapshot,
-		category = "all"
-	}: { snapshot: DiffedSnapshot; category?: string } = $props();
+		category = "all",
+		sparklines = {}
+	}: { snapshot: DiffedSnapshot; category?: string; sparklines?: Record<string, number[]> } =
+		$props();
 
 	// Setup sortable table
 	type AssetKey = keyof DiffedSnapshot["assets"][0];
@@ -54,6 +57,7 @@
 		{ width: 26, title: "Price", sortKey: null },
 		{ width: 20, title: "24h", sortKey: "medianRefPxChange" },
 		{ width: 28, title: "Class", sortKey: "category" },
+		{ width: 22, title: "Chart", sortKey: null },
 		{ width: 25, title: "Venues", sortKey: null },
 		{ width: 3, title: "", sortKey: null }
 	];
@@ -154,6 +158,15 @@
 			<!-- Class -->
 			<Table.Cell class="w-28">
 				<span class="font-mono uppercase">{asset.category}</span>
+			</Table.Cell>
+
+			<!-- Mini chart -->
+			<Table.Cell class="w-22">
+				{#if sparklines[assetId]?.length}
+					<Sparkline series={sparklines[assetId]} width={70} height={22} />
+				{:else}
+					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+				{/if}
 			</Table.Cell>
 
 			<!-- Venues -->
