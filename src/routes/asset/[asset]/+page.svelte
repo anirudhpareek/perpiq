@@ -12,6 +12,7 @@
 	import AssetIntelligence from "$components/intelligence/AssetIntelligence.svelte";
 	import UnderlyingEquity from "$components/intelligence/UnderlyingEquity.svelte";
 	import RelatedAssets from "$components/RelatedAssets.svelte";
+	import AssetPriceChart from "$components/AssetPriceChart.svelte";
 	import type { WithContext, FinancialProduct } from "schema-dts";
 
 	let { data }: PageProps = $props();
@@ -123,7 +124,13 @@
 				</div>
 			</div>
 
-			<!-- Chart range pills (visual shell — sparkline column already shows trend) -->
+			<!-- Real price chart driven by sparkline series -->
+			<AssetPriceChart
+				series={data.sparklines?.[data.asset] ?? []}
+				currency={meta.quote ?? "USD"}
+			/>
+
+			<!-- Chart range pills -->
 			<div class="flex items-center justify-between border-t border-t-gecko-shade pt-4">
 				<div class="flex items-center gap-1">
 					{#each ["1H", "1D", "1W", "1M", "1Y", "All"] as r}
