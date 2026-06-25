@@ -1,6 +1,7 @@
 import { strTimingSafeEqual } from "$lib/utils.server";
+import { env } from "$env/dynamic/private";
 import { json, error, type RequestHandler } from "@sveltejs/kit";
-import { CRON_SECRET, VERCEL_DEPLOY_HOOK } from "$env/static/private";
+import { CRON_SECRET } from "$env/static/private";
 
 // Allow force-rebuilding static pages
 export const GET: RequestHandler = async ({ request }) => {
@@ -12,8 +13,13 @@ export const GET: RequestHandler = async ({ request }) => {
 		throw error(401, "Missing `Authorization` header");
 	}
 
+	const deployHook = env.VERCEL_DEPLOY_HOOK;
+	if (!deployHook) {
+		throw error(500, "Missing `VERCEL_DEPLOY_HOOK` environment variable");
+	}
+
 	// Trigger rebuild, validate success
-	const response = await fetch(VERCEL_DEPLOY_HOOK, { method: "POST" });
+	const response = await fetch(deployHook, { method: "POST" });
 	if (!response.ok) {
 		throw error(502, "Failed to trigger rebuild");
 	}
