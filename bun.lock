@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "stockgecko.com",
+      "name": "prepiq",
       "dependencies": {
         "@nktkas/hyperliquid": "^0.31.0",
         "@paper-design/shaders": "^0.0.71",

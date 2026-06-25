@@ -13,14 +13,14 @@
 					<!-- Mobile-friendly variant with explicit w/h -->
 					<img
 						src="/assets/brand/logo.svg"
-						alt="StockGecko logo"
+						alt="prepiq logo"
 						class="hidden lg:inline"
 						height="40px"
 						width="200px"
 					/>
 					<img
 						src="/assets/brand/logo.svg"
-						alt="StockGecko logo"
+						alt="prepiq logo"
 						class="lg:hidden"
 						height="24px"
 						width="120px"
@@ -31,17 +31,17 @@
 			<!-- Terms -->
 			<div class="pt-5">
 				<p class="text-left text-xs text-gecko-white/40 lg:text-center">
-					StockGecko is an independent, <a
-						href="https://github.com/anish-agnihotri/stockgecko.com"
+					prepiq is an independent, <a
+						href="https://github.com/anirudhpareek/perpiq"
 						target="_blank"
 						rel="noopener noreferrer"
 						class="text-gecko-white/70 hover:text-gecko-white/90">open-source</a
 					>
 					project, and is not affiliated with, endorsed by, or connected to CoinGecko in any way. All
 					data presented on this site is provided on an as-is basis for information purposes only and
-					should not be construed as financial advice. While we strive for accuracy, StockGecko makes
-					no warranties or guarantees regarding the completeness, reliability, or timelines of any data
-					displayed. Use of this site and its data is entirely at your own risk.
+					should not be construed as financial advice. While we strive for accuracy, prepiq makes no warranties
+					or guarantees regarding the completeness, reliability, or timelines of any data displayed. Use
+					of this site and its data is entirely at your own risk.
 				</p>
 			</div>
 		</div>

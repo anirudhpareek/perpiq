@@ -18,14 +18,14 @@
 		<a href="/" class="shrink-0">
 			<img
 				src="/assets/brand/logo.svg"
-				alt="StockGecko logo"
+				alt="prepiq logo"
 				class="hidden lg:inline"
 				height="32px"
 				width="160px"
 			/>
 			<img
 				src="/assets/brand/logo.svg"
-				alt="StockGecko logo"
+				alt="prepiq logo"
 				class="lg:hidden"
 				height="24px"
 				width="120px"

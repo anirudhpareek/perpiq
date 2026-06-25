@@ -35,7 +35,7 @@
 	}
 </script>
 
-<Meta title="StockGecko | Venues" />
+<Meta title="prepiq | Venues" />
 
 <div class="flex flex-1 flex-col">
 	<!-- Landing header (title, description) -->

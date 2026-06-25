@@ -51,7 +51,7 @@
 	// Structured schema
 	// @dev: Doesn't have to be derived given pageload properties but added
 	// 			 for page change posterity
-	const title = $derived(`StockGecko | ${meta.name}`);
+	const title = $derived(`prepiq | ${meta.name}`);
 	const schema: WithContext<Organization> = $derived({
 		"@context": "https://schema.org",
 		"@type": "Organization",

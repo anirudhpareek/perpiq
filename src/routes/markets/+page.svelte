@@ -82,7 +82,7 @@
 	});
 </script>
 
-<Meta title="StockGecko | Markets" />
+<Meta title="prepiq | Markets" />
 
 <!-- Landing header (title, description) -->
 <Grid bottom={false}>

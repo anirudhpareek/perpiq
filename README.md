@@ -1,10 +1,10 @@
-![StockGecko landing image](https://github.com/user-attachments/assets/10234bb9-c50e-4831-b6d1-905b4b6dfbe6)
+![prepiq landing image](https://github.com/user-attachments/assets/10234bb9-c50e-4831-b6d1-905b4b6dfbe6)
 
-<p align="center">StockGecko aggregates <b>270+ markets</b> across <b>85+ assets</b> and <b>12+ venues</b>—covering stocks, indices, commodities, FX, and pre-IPO perps.</p>
+<p align="center">prepiq aggregates <b>270+ markets</b> across <b>85+ assets</b> and <b>12+ venues</b>—covering stocks, indices, commodities, FX, and pre-IPO perps.</p>
 
 ## Setup & Usage
 
-StockGecko is a single entrypoint [Bun](https://bun.sh) runtime project:
+prepiq is a single entrypoint [Bun](https://bun.sh) runtime project:
 
 - Front-end: [SvelteKit@5](https://svelte.dev/docs/kit/introduction), [Tailwind@4](https://tailwindcss.com/), [shadcn-svelte](https://www.shadcn-svelte.com/), and [Apache echarts](https://echarts.apache.org/en/index.html)
 - Indexer: [Workflow DevKit](https://useworkflow.dev/) workflows, procced periodically via [Vercel Cron](./vercel.json)
@@ -24,11 +24,11 @@ vim .env
 
 By default, only `DATABASE_URL` is required to run locally:
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `CRON_SECRET` | Bearer token for cron endpoint authentication (>32 characters, e.g. via `openssl rand -hex 32`). Notice: this env var is automatically injected by [Vercel Cron](https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs) jobs via `Authorization` header. |
-| `VERCEL_DEPLOY_HOOK` | StockGecko is statically-rendered for maximal performance. Once connected via Git, this deploy hook is proceed periodically by [cron jobs](./vercel.json) to rebuild all static pages with fresh data. |
+| Variable             | Description                                                                                                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`       | PostgreSQL connection string                                                                                                                                                                                                                                             |
+| `CRON_SECRET`        | Bearer token for cron endpoint authentication (>32 characters, e.g. via `openssl rand -hex 32`). Notice: this env var is automatically injected by [Vercel Cron](https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs) jobs via `Authorization` header. |
+| `VERCEL_DEPLOY_HOOK` | prepiq is statically-rendered for maximal performance. Once connected via Git, this deploy hook is proceed periodically by [cron jobs](./vercel.json) to rebuild all static pages with fresh data.                                                                       |
 
 ---
 
@@ -48,9 +48,9 @@ make setup
 ```
 
 > [!NOTE]
-> 
+>
 > The initial setup target does a few things under the hood:
-> 
+>
 > 1. Initializes the database by loading the schema via Prisma migration
 > 2. Runs the dev server in background (including [`@workflow/world-local`](https://useworkflow.dev/worlds/local) job runtime)
 > 3. Runs the core [collectMarkets](./src/workflows/collect.ts) workflow twice to bootstrap market data for [initial render](./src/lib/load.ts)
@@ -84,7 +84,7 @@ Quicklinks: [local dev](http://localhost:5173), [workflow observability UI](http
 
 ### Deploy to Vercel
 
-By default: StockGecko is optimized for deploying to Vercel:
+By default: prepiq is optimized for deploying to Vercel:
 
 1. We use [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) via [vercel.json](./vercel.json) to proc market collection and static rebuilds
 2. We use [`@workflow/world-vercel`](https://useworkflow.dev/worlds/vercel) for managed job workflow execution

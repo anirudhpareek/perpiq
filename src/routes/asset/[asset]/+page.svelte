@@ -42,7 +42,7 @@
 	// Structured schema
 	// @dev: Doesn't have to be derived given pageload properties but added
 	// 			 for page change posterity
-	const title = $derived(`StockGecko | ${meta.name}`);
+	const title = $derived(`prepiq | ${meta.name}`);
 	const schema: WithContext<FinancialProduct> = $derived({
 		"@context": "https://schema.org",
 		"@type": "FinancialProduct",
@@ -72,17 +72,16 @@
 
 <!-- Breadcrumb -->
 <div class="border-b border-b-gecko-shade">
-	<div class="mx-auto flex max-w-7xl items-center gap-1.5 px-4 py-3 text-xs text-gecko-gray/70 lg:px-8">
+	<div
+		class="mx-auto flex max-w-7xl items-center gap-1.5 px-4 py-3 text-xs text-gecko-gray/70 lg:px-8"
+	>
 		<a href="/" class="hover:text-gecko-white">Markets</a>
 		<span class="text-gecko-gray/40">/</span>
-		<a
-			href="/?category={asset?.category ?? 'stocks'}"
-			class="capitalize hover:text-gecko-white"
-		>
+		<a href="/?category={asset?.category ?? 'stocks'}" class="capitalize hover:text-gecko-white">
 			{asset?.category ?? "Asset"}
 		</a>
 		<span class="text-gecko-gray/40">/</span>
-		<span class="font-mono uppercase text-gecko-white">{data.asset}</span>
+		<span class="font-mono text-gecko-white uppercase">{data.asset}</span>
 	</div>
 </div>
 
@@ -94,9 +93,7 @@
 			<Icon
 				src={meta.icon}
 				alt={meta.name}
-				class="{meta.icon.length > 1
-					? 'size-10 md:size-12'
-					: ''} [&_img]:size-7 md:[&_img]:size-9"
+				class="{meta.icon.length > 1 ? 'size-10 md:size-12' : ''} [&_img]:size-7 md:[&_img]:size-9"
 			/>
 			<div class="flex flex-1 flex-col">
 				<div class="flex items-center gap-2">
@@ -104,7 +101,7 @@
 					<span class="font-mono text-xs text-gecko-gray/80">{data.asset.toUpperCase()}</span>
 				</div>
 				{#if asset?.category}
-					<span class="text-[11px] capitalize text-gecko-gray/70">{asset.category}</span>
+					<span class="text-[11px] text-gecko-gray/70 capitalize">{asset.category}</span>
 				{/if}
 			</div>
 		</div>
@@ -125,10 +122,7 @@
 			</div>
 
 			<!-- Real price/volume chart with functional range + mode controls -->
-			<AssetPriceChart
-				data={data.series?.[data.asset] ?? null}
-				currency={meta.quote ?? "USD"}
-			/>
+			<AssetPriceChart data={data.series?.[data.asset] ?? null} currency={meta.quote ?? "USD"} />
 		{/if}
 
 		{#if meta.description}
@@ -141,9 +135,11 @@
 {#if hasData && asset}
 	{@const venueCount = new Set(asset.marketIds.map((id) => snapshot.markets[id].venue)).size}
 	<div class="border-b border-b-gecko-shade">
-		<div class="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:grid-cols-3 lg:grid-cols-6 lg:px-8">
+		<div
+			class="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:grid-cols-3 lg:grid-cols-6 lg:px-8"
+		>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Volume 24h
 				</span>
 				<Numeric
@@ -155,7 +151,7 @@
 				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage />
 			</div>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Open Interest
 				</span>
 				<Numeric
@@ -167,7 +163,7 @@
 				<Numeric value={asset.oiChange * 100} format="numeric" change percentage />
 			</div>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Median price
 				</span>
 				<Numeric
@@ -179,24 +175,24 @@
 				<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
 			</div>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Markets
 				</span>
 				<span class="text-sm font-medium text-gecko-white">{asset.marketIds.length}</span>
 				<span class="text-[10px] text-gecko-gray/60">across all venues</span>
 			</div>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Venues
 				</span>
 				<span class="text-sm font-medium text-gecko-white">{venueCount}</span>
 				<span class="text-[10px] text-gecko-gray/60">unique exchanges</span>
 			</div>
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					Asset class
 				</span>
-				<span class="text-sm font-medium capitalize text-gecko-white">{asset.category}</span>
+				<span class="text-sm font-medium text-gecko-white capitalize">{asset.category}</span>
 			</div>
 		</div>
 	</div>
@@ -216,22 +212,22 @@
 {/if}
 
 {#if hasData && asset}
-<!-- Intelligence panel -->
-<AssetIntelligence {snapshot} assetId={data.asset} />
+	<!-- Intelligence panel -->
+	<AssetIntelligence {snapshot} assetId={data.asset} />
 
-<!-- Underlying equity context (stocks only) -->
-<UnderlyingEquity {snapshot} assetId={data.asset} category={asset.category} />
+	<!-- Underlying equity context (stocks only) -->
+	<UnderlyingEquity {snapshot} assetId={data.asset} category={asset.category} />
 
-<!-- Market table -->
-<div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">
-	<MarketTable filter={{ assetId: data.asset }} {snapshot} />
-</div>
+	<!-- Market table -->
+	<div class="flex flex-1 flex-col md:border-t md:border-t-gecko-shade">
+		<MarketTable filter={{ assetId: data.asset }} {snapshot} />
+	</div>
 
-<!-- Related assets in same class -->
-<RelatedAssets
-	{snapshot}
-	assetId={data.asset}
-	category={asset.category}
-	sparklines={data.sparklines ?? {}}
-/>
+	<!-- Related assets in same class -->
+	<RelatedAssets
+		{snapshot}
+		assetId={data.asset}
+		category={asset.category}
+		sparklines={data.sparklines ?? {}}
+	/>
 {/if}
