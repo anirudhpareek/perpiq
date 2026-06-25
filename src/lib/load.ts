@@ -19,10 +19,17 @@ const P0_VENUES: readonly string[] = ["hyperliquid", "lighter"];
 // How many recent batches to pull into per-asset sparklines.
 const SPARKLINE_BATCHES = 12;
 
+export type AssetSeries = {
+	price: number[]; // median refPx per batch (NaN where unavailable)
+	volume: number[]; // summed market volume per batch
+	timestamps: number[]; // ms since epoch, batch createdAt
+};
+
 export type LoadResult = {
 	snapshot: DiffedSnapshot;
-	// assetId -> chronologically ordered median refPx series, oldest first
-	sparklines: Record<string, number[]>;
+	// assetId -> chronologically ordered series, oldest first
+	sparklines: Record<string, number[]>; // back-compat: price-only
+	series: Record<string, AssetSeries>;
 };
 
 /**
@@ -32,7 +39,7 @@ export async function loadSnapshot(): Promise<LoadResult> {
 	// Dev fallback: when no DATABASE_URL is configured, serve a synthetic fixture
 	// so the UI can be exercised locally without Postgres + collectors.
 	if (!env.DATABASE_URL) {
-		return { ...buildFixtureSnapshot(), sparklines: {} };
+		return { ...buildFixtureSnapshot(), sparklines: {}, series: {} };
 	}
 
 	const { default: db } = await import("$lib/db");
@@ -77,15 +84,20 @@ export async function loadSnapshot(): Promise<LoadResult> {
 				take: SPARKLINE_BATCHES
 			});
 			// Order oldest-first for chart x-axis
-			const batchOrder = recentBatches
-				.slice()
-				.reverse()
-				.map((r) => r.batchId);
+			const batchOrder = recentBatches.slice().reverse();
+			const batchIds = batchOrder.map((r) => r.batchId);
 
-			// Light projection — only need venue/namespace/ticker/refPx to compute medians
+			// Need refPx + volume — keep projection light, but include both
 			const sparklineRows = await tx.marketEntry.findMany({
-				where: { batchId: { in: batchOrder } },
-				select: { batchId: true, venue: true, namespace: true, ticker: true, refPx: true }
+				where: { batchId: { in: batchIds } },
+				select: {
+					batchId: true,
+					venue: true,
+					namespace: true,
+					ticker: true,
+					refPx: true,
+					volume: true
+				}
 			});
 
 			return { prevEntries, currEntries, sparklineRows, batchOrder };
@@ -97,48 +109,70 @@ export async function loadSnapshot(): Promise<LoadResult> {
 		buildSnapshot(plainifyEntries(currEntries))
 	);
 
-	// Build per-asset median refPx series across the recent batches.
-	// For each batch: bucket prices by asset (filtering to matching-quote venues
-	// the same way buildSnapshot does), take the median, append to the series.
-	const batchIndex = new Map(batchOrder.map((id, i) => [id, i]));
-	// assetId -> Map<batchIdx, number[]>
-	const buckets = new Map<string, Map<number, number[]>>();
+	// Build per-asset median refPx + summed volume series across the recent batches.
+	const batchIndex = new Map(batchOrder.map((r, i) => [r.batchId, i]));
+	const timestamps = batchOrder.map((r) => (r._max.createdAt?.getTime() ?? 0));
+
+	// assetId -> { prices[batchIdx][], volume[batchIdx] }
+	type Bucket = { priceArrs: Map<number, number[]>; volumes: Map<number, number> };
+	const buckets = new Map<string, Bucket>();
+
+	function bucketFor(assetId: string): Bucket {
+		let b = buckets.get(assetId);
+		if (!b) {
+			b = { priceArrs: new Map(), volumes: new Map() };
+			buckets.set(assetId, b);
+		}
+		return b;
+	}
+
 	for (const r of sparklineRows) {
 		const key = `${r.venue}${r.namespace ? ":" + r.namespace : ""}:${r.ticker}`;
 		const meta = MARKET_TO_ASSET.get(key);
 		if (!meta) continue;
-		if (meta.quote !== meta.venueQuote) continue;
-		const px = Number(r.refPx);
-		if (!(px > 0)) continue;
 		const bi = batchIndex.get(r.batchId)!;
-		let assetMap = buckets.get(meta.asset);
-		if (!assetMap) {
-			assetMap = new Map();
-			buckets.set(meta.asset, assetMap);
+		const b = bucketFor(meta.asset);
+
+		// Price: only count venues that quote in the asset's preferred currency
+		if (meta.quote === meta.venueQuote) {
+			const px = Number(r.refPx);
+			if (px > 0) {
+				let arr = b.priceArrs.get(bi);
+				if (!arr) {
+					arr = [];
+					b.priceArrs.set(bi, arr);
+				}
+				arr.push(px);
+			}
 		}
-		let arr = assetMap.get(bi);
-		if (!arr) {
-			arr = [];
-			assetMap.set(bi, arr);
+
+		// Volume: sum across all venues (USD notional already normalized upstream)
+		const vol = Number(r.volume);
+		if (vol > 0) {
+			b.volumes.set(bi, (b.volumes.get(bi) ?? 0) + vol);
 		}
-		arr.push(px);
 	}
 
 	const sparklines: Record<string, number[]> = {};
-	for (const [assetId, assetMap] of buckets) {
-		const series: number[] = [];
+	const series: Record<string, AssetSeries> = {};
+
+	for (const [assetId, b] of buckets) {
+		const price: number[] = [];
+		const volume: number[] = [];
 		for (let i = 0; i < batchOrder.length; i++) {
-			const arr = assetMap.get(i);
+			const arr = b.priceArrs.get(i);
 			if (!arr || arr.length === 0) {
-				series.push(NaN);
-				continue;
+				price.push(NaN);
+			} else {
+				arr.sort((a, b) => a - b);
+				const mid = arr.length >> 1;
+				price.push(arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2);
 			}
-			arr.sort((a, b) => a - b);
-			const mid = arr.length >> 1;
-			series.push(arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2);
+			volume.push(b.volumes.get(i) ?? NaN);
 		}
-		sparklines[assetId] = series;
+		sparklines[assetId] = price;
+		series[assetId] = { price, volume, timestamps };
 	}
 
-	return { snapshot, sparklines };
+	return { snapshot, sparklines, series };
 }

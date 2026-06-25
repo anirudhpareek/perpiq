@@ -124,42 +124,11 @@
 				</div>
 			</div>
 
-			<!-- Real price chart driven by sparkline series -->
+			<!-- Real price/volume chart with functional range + mode controls -->
 			<AssetPriceChart
-				series={data.sparklines?.[data.asset] ?? []}
+				data={data.series?.[data.asset] ?? null}
 				currency={meta.quote ?? "USD"}
 			/>
-
-			<!-- Chart range pills -->
-			<div class="flex items-center justify-between border-t border-t-gecko-shade pt-4">
-				<div class="flex items-center gap-1">
-					{#each ["1H", "1D", "1W", "1M", "1Y", "All"] as r}
-						<button
-							type="button"
-							class="press rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide {r ===
-							'1D'
-								? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-								: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
-						>
-							{r}
-						</button>
-					{/each}
-				</div>
-				<div class="flex items-center gap-1">
-					<button
-						type="button"
-						class="rounded-full border border-gecko-gray bg-gecko-shade px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide text-gecko-white"
-					>
-						Price
-					</button>
-					<button
-						type="button"
-						class="rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide text-gecko-gray hover:text-gecko-white"
-					>
-						Volume
-					</button>
-				</div>
-			</div>
 		{/if}
 
 		{#if meta.description}
