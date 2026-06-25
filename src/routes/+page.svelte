@@ -18,18 +18,21 @@
 <Meta />
 
 <!-- Hero -->
-<div class="flex min-h-72 flex-row justify-center border-b border-b-gecko-shade md:min-h-96">
+<div class="flex min-h-56 flex-row justify-center border-b border-b-gecko-shade md:min-h-72">
 	<DitherHero class="flex flex-1 flex-col">
 		<div class="flex flex-1 items-center justify-center">
-			<div class="flex max-w-xl flex-col items-center justify-center px-8 text-center lg:px-4">
-				<h1 class="text-3xl font-bold text-gecko-white sm:text-5xl">TradFi lives on-chain.</h1>
-				<p class="max-w-sm pt-2 text-sm">
+			<div class="flex max-w-2xl flex-col items-center justify-center px-8 text-center lg:px-4">
+				<h1 class="text-2xl font-semibold text-gecko-white sm:text-4xl">
+					Discover on-chain RWA perps before liquidity moves.
+				</h1>
+				<p class="max-w-lg pt-2 text-sm text-gecko-gray/85">
 					<Numeric
 						value={data.snapshot.aggregates.volume}
 						currency="USD"
 						format="currency"
 						class="text-gecko-gray!"
-					/> and counting of real-world assets have traded on crypto venues in the last 24 hours.
+					/> traded in the last 24h across real-world asset perps, venue liquidity, and reference price
+					ranges.
 				</p>
 			</div>
 		</div>
@@ -39,7 +42,7 @@
 <!-- Featured cards (uniswap-style hero strip) -->
 <FeaturedMovers {snapshot} {sparklines} />
 
-<!-- Market intelligence -->
+<!-- Market signals -->
 <HomepageIntelligence {snapshot} {sparklines} />
 
 <!-- Category filter -->

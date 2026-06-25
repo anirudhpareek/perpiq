@@ -101,7 +101,8 @@ export async function loadSnapshot(): Promise<LoadResult> {
 			});
 
 			return { prevEntries, currEntries, sparklineRows, batchOrder };
-		}
+		},
+		{ maxWait: 20_000, timeout: 20_000 }
 	);
 
 	const snapshot = buildDiffedSnapshot(
@@ -111,7 +112,7 @@ export async function loadSnapshot(): Promise<LoadResult> {
 
 	// Build per-asset median refPx + summed volume series across the recent batches.
 	const batchIndex = new Map(batchOrder.map((r, i) => [r.batchId, i]));
-	const timestamps = batchOrder.map((r) => (r._max.createdAt?.getTime() ?? 0));
+	const timestamps = batchOrder.map((r) => r._max.createdAt?.getTime() ?? 0);
 
 	// assetId -> { prices[batchIdx][], volume[batchIdx] }
 	type Bucket = { priceArrs: Map<number, number[]>; volumes: Map<number, number> };

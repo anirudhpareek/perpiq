@@ -34,6 +34,7 @@ export type SignalKind =
 	| "oi_drop"
 	| "price_divergence"
 	| "new_market"
+	| "high_concentration"
 	| "venue_dominance_shift"
 	| "stale_market";
 
@@ -88,6 +89,22 @@ export type AssetIntelligence = {
 	} | null;
 };
 
+export type VenueContext = {
+	marketIds: string[];
+	marketCount: number;
+	volume: number;
+	oi: number;
+	volumeChange: number;
+	oiChange: number;
+	oiShare: number;
+	oiShareChange: number;
+	dominantClasses: { category: string; volume: number; share: number }[];
+	topByVolume: { marketKey: string; assetId: string; value: number }[];
+	topByOi: { marketKey: string; assetId: string; value: number }[];
+	biggestMovers: { marketKey: string; assetId: string; value: number }[];
+	newMarkets: { marketKey: string; assetId: string; volume: number }[];
+};
+
 // --- Helpers ---
 
 function pct(x: number): string {
@@ -95,8 +112,74 @@ function pct(x: number): string {
 	return `${sign}${(x * 100).toFixed(1)}%`;
 }
 
+function absPct(x: number): string {
+	return `${Math.abs(x * 100).toFixed(1)}%`;
+}
+
 function bps(x: number): string {
 	return `${x.toFixed(0)} bps`;
+}
+
+export function formatSignalValue(signal: Signal): string {
+	switch (signal.kind) {
+		case "volume_spike":
+		case "volume_drop":
+		case "oi_spike":
+		case "oi_drop":
+		case "venue_dominance_shift":
+			return pct(signal.value);
+		case "high_concentration":
+			return `${(signal.value * 100).toFixed(1)}%`;
+		case "price_divergence":
+			return bps(signal.value);
+		case "stale_market":
+			return `$${formatCompact(signal.value)}`;
+		case "new_market":
+			return "";
+	}
+}
+
+export function signalShortLabel(kind: SignalKind): string {
+	switch (kind) {
+		case "volume_spike":
+			return "Volume spike";
+		case "volume_drop":
+			return "Volume drop";
+		case "oi_spike":
+			return "OI build";
+		case "oi_drop":
+			return "OI unwind";
+		case "price_divergence":
+			return "Price range";
+		case "new_market":
+			return "New market";
+		case "high_concentration":
+			return "High concentration";
+		case "venue_dominance_shift":
+			return "Venue shift";
+		case "stale_market":
+			return "No volume";
+	}
+}
+
+function assetDisplayName(snapshot: DiffedSnapshot, assetId: string): string {
+	const firstMarket = snapshot.assets[assetId]?.marketIds[0];
+	return (firstMarket && MARKET_TO_ASSET.get(firstMarket)?.name) || assetId.toUpperCase();
+}
+
+function humanVenueName(venue: string, namespace = ""): string {
+	return namespace ? `${venue}:${namespace}` : venue;
+}
+
+function directionWord(x: number): string {
+	if (x > 0.005) return "rose";
+	if (x < -0.005) return "fell";
+	return "was flat";
+}
+
+function changePhrase(metric: string, value: number): string {
+	if (Math.abs(value) <= 0.005) return `${metric} was flat over 24h`;
+	return `${metric} ${directionWord(value)} ${absPct(value)} over 24h`;
 }
 
 // --- Asset-level computations ---
@@ -281,7 +364,21 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 			severity: div.bps >= 200 ? "alert" : "watch",
 			assetId,
 			value: div.bps,
-			label: `Cross-venue price spread ${bps(div.bps)}`
+			label: `Cross-venue reference price range ${bps(div.bps)}`
+		});
+	}
+
+	const conc = computeVenueConcentration(snapshot, assetId);
+	if (conc.venueCount > 1 && conc.topVolumeShare >= 0.75) {
+		const top = conc.venues[0];
+		signals.push({
+			kind: "high_concentration",
+			severity: conc.topVolumeShare >= 0.9 ? "watch" : "info",
+			assetId,
+			marketKey: top.marketKey,
+			venue: top.venue,
+			value: conc.topVolumeShare,
+			label: `${humanVenueName(top.venue, top.namespace)} accounts for ${(conc.topVolumeShare * 100).toFixed(1)}% of volume`
 		});
 	}
 
@@ -290,7 +387,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 
 // --- Summary text ---
 
-function topSignalLabel(signals: Signal[]): string | null {
+function signalPriority(kind: SignalKind): number {
 	const order: Record<SignalKind, number> = {
 		price_divergence: 0,
 		oi_spike: 1,
@@ -298,48 +395,52 @@ function topSignalLabel(signals: Signal[]): string | null {
 		oi_drop: 3,
 		volume_drop: 4,
 		new_market: 5,
-		venue_dominance_shift: 6,
-		stale_market: 7
+		high_concentration: 6,
+		venue_dominance_shift: 7,
+		stale_market: 8
 	};
-	const sorted = [...signals].sort((a, b) => order[a.kind] - order[b.kind]);
-	return sorted[0]?.label ?? null;
+	return order[kind];
 }
 
-function venueDisplayName(marketKey: string): string {
-	const market = marketKey.split(":");
-	return market.slice(0, market.length - 1).join(":") || marketKey;
+function topSignal(signals: Signal[]): Signal | null {
+	return [...signals].sort((a, b) => signalPriority(a.kind) - signalPriority(b.kind))[0] ?? null;
 }
 
 function buildAssetSummary(
 	snapshot: DiffedSnapshot,
 	assetId: string,
 	conc: AssetIntelligence["venueConcentration"],
-	signals: Signal[]
+	signals: Signal[],
+	priceDivergence: AssetIntelligence["priceDivergence"]
 ): string {
 	const asset = snapshot.assets[assetId];
 	if (!asset) return "";
 
 	const parts: string[] = [];
-
-	parts.push(
-		`Trading $${formatCompact(asset.volume)} across ${conc.venueCount} venue${conc.venueCount === 1 ? "" : "s"} (${pct(asset.volumeChange)} 24h).`
-	);
+	const name = assetDisplayName(snapshot, assetId);
 
 	if (conc.venues.length > 0 && conc.topVolumeShare > 0) {
 		const top = conc.venues[0];
+		const concentration = conc.topVolumeShare >= 0.75 ? "is concentrated on" : "is led by";
 		parts.push(
-			`${venueDisplayName(top.marketKey)} is the volume leader at ${(conc.topVolumeShare * 100).toFixed(0)}% share.`
+			`${name} activity ${concentration} ${humanVenueName(top.venue, top.namespace)}, which accounts for ${(conc.topVolumeShare * 100).toFixed(1)}% of volume${top.oiShare > 0 ? ` and ${(top.oiShare * 100).toFixed(1)}% of OI` : ""}.`
 		);
+	} else {
+		parts.push(`${name} has no active venue concentration in the latest batch.`);
 	}
 
-	if (conc.hhi >= 0.6) {
-		parts.push("Venue concentration is high.");
-	} else if (conc.hhi <= 0.25 && conc.venueCount >= 3) {
-		parts.push("Liquidity is broadly distributed.");
+	parts.push(
+		`${changePhrase("Total perp volume", asset.volumeChange)}, while OI ${directionWord(asset.oiChange)} ${absPct(asset.oiChange)}.`
+	);
+
+	if (priceDivergence) {
+		const rangeTone =
+			priceDivergence.bps < THRESHOLDS.priceDivergenceBps ? "remain tight" : "are wide";
+		parts.push(`Comparable-quote reference prices ${rangeTone} at ${bps(priceDivergence.bps)}.`);
 	}
 
-	const top = topSignalLabel(signals);
-	if (top) parts.push(top + ".");
+	const top = signals.find((signal) => signal.kind === "new_market");
+	if (top) parts.push(top.label + ".");
 
 	return parts.join(" ");
 }
@@ -363,9 +464,184 @@ export function buildAssetIntelligence(
 	const venueConcentration = computeVenueConcentration(snapshot, assetId);
 	const signals = detectAssetSignals(snapshot, assetId);
 	const priceDivergence = computePriceDivergence(snapshot, assetId);
-	const summary = buildAssetSummary(snapshot, assetId, venueConcentration, signals);
+	const summary = buildAssetSummary(
+		snapshot,
+		assetId,
+		venueConcentration,
+		signals,
+		priceDivergence
+	);
 
 	return { assetId, summary, signals, venueConcentration, priceDivergence };
+}
+
+export function getPrimaryAssetSignal(snapshot: DiffedSnapshot, assetId: string): Signal | null {
+	return topSignal(detectAssetSignals(snapshot, assetId));
+}
+
+export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: string): Signal | null {
+	const market = snapshot.markets[marketKey];
+	const meta = MARKET_TO_ASSET.get(marketKey);
+	if (!market || !meta) return null;
+
+	if (market.isNew) {
+		return {
+			kind: "new_market",
+			severity: "info",
+			assetId: meta.asset,
+			marketKey,
+			venue: market.venue,
+			value: 1,
+			label: `New listing on ${humanVenueName(market.venue, market.namespace)}`
+		};
+	}
+
+	if (market.volume === 0 && market.oi > 0) {
+		return {
+			kind: "stale_market",
+			severity: "info",
+			assetId: meta.asset,
+			marketKey,
+			venue: market.venue,
+			value: market.oi,
+			label: `No 24h volume while OI remains open`
+		};
+	}
+
+	const asset = snapshot.assets[meta.asset];
+	const priceDivergence = computePriceDivergence(snapshot, meta.asset);
+	const marketIsRangeEdge =
+		priceDivergence &&
+		(priceDivergence.lowMarketKey === marketKey || priceDivergence.highMarketKey === marketKey);
+	if (marketIsRangeEdge && priceDivergence.bps >= THRESHOLDS.priceDivergenceBps) {
+		return {
+			kind: "price_divergence",
+			severity: priceDivergence.bps >= 200 ? "alert" : "watch",
+			assetId: meta.asset,
+			marketKey,
+			venue: market.venue,
+			value: priceDivergence.bps,
+			label: `Reference price range edge at ${bps(priceDivergence.bps)}`
+		};
+	}
+
+	if (asset?.volume >= THRESHOLDS.moverMinVolumeUsd) {
+		if (market.volumeChange >= THRESHOLDS.volumeSpike) {
+			return {
+				kind: "volume_spike",
+				severity: market.volumeChange >= 2 ? "alert" : "watch",
+				assetId: meta.asset,
+				marketKey,
+				venue: market.venue,
+				value: market.volumeChange,
+				label: `Market volume ${pct(market.volumeChange)} vs 24h ago`
+			};
+		}
+		if (market.oiChange >= THRESHOLDS.oiSpike) {
+			return {
+				kind: "oi_spike",
+				severity: market.oiChange >= 1 ? "alert" : "watch",
+				assetId: meta.asset,
+				marketKey,
+				venue: market.venue,
+				value: market.oiChange,
+				label: `Market OI ${pct(market.oiChange)} vs 24h ago`
+			};
+		}
+	}
+
+	return null;
+}
+
+export function assetMatchesSignalFilter(
+	snapshot: DiffedSnapshot,
+	assetId: string,
+	filter: "new" | "divergences"
+): boolean {
+	const asset = snapshot.assets[assetId];
+	if (!asset) return false;
+	if (filter === "new")
+		return asset.isNew || asset.marketIds.some((id) => snapshot.markets[id]?.isNew);
+	return (computePriceDivergence(snapshot, assetId)?.bps ?? 0) >= THRESHOLDS.priceDivergenceBps;
+}
+
+export function buildVenueContext(
+	snapshot: DiffedSnapshot,
+	venue: string,
+	namespace?: string
+): VenueContext {
+	const marketIds = (snapshot.index.marketsByVenue[venue] ?? []).filter((id) =>
+		namespace ? snapshot.markets[id].namespace === namespace : true
+	);
+
+	let volume = 0;
+	let oi = 0;
+	let volumeWeightedChange = 0;
+	let oiWeightedChange = 0;
+	const classVolumes = new Map<string, number>();
+
+	const rows: {
+		marketKey: string;
+		assetId: string;
+		market: DiffedSnapshot["markets"][string];
+	}[] = [];
+
+	for (const marketKey of marketIds) {
+		const market = snapshot.markets[marketKey];
+		const meta = MARKET_TO_ASSET.get(marketKey);
+		if (!market || !meta) continue;
+		volume += market.volume;
+		oi += market.oi;
+		volumeWeightedChange += market.volume * market.volumeChange;
+		oiWeightedChange += market.oi * market.oiChange;
+		classVolumes.set(meta.category, (classVolumes.get(meta.category) ?? 0) + market.volume);
+		rows.push({ marketKey, assetId: meta.asset, market });
+	}
+
+	const dominantClasses = [...classVolumes.entries()]
+		.map(([category, classVolume]) => ({
+			category,
+			volume: classVolume,
+			share: volume > 0 ? classVolume / volume : 0
+		}))
+		.sort((a, b) => b.volume - a.volume)
+		.slice(0, 4);
+
+	const oiVenue = snapshot.aggregates.oiByVenue.find((v) => v.venue === venue);
+
+	return {
+		marketIds,
+		marketCount: marketIds.length,
+		volume,
+		oi,
+		volumeChange: volume > 0 ? volumeWeightedChange / volume : 0,
+		oiChange: oi > 0 ? oiWeightedChange / oi : 0,
+		oiShare: oiVenue?.oiShare ?? 0,
+		oiShareChange: oiVenue?.oiShareChange ?? 0,
+		dominantClasses,
+		topByVolume: [...rows]
+			.sort((a, b) => b.market.volume - a.market.volume)
+			.slice(0, 5)
+			.map((row) => ({ marketKey: row.marketKey, assetId: row.assetId, value: row.market.volume })),
+		topByOi: [...rows]
+			.sort((a, b) => b.market.oi - a.market.oi)
+			.slice(0, 5)
+			.map((row) => ({ marketKey: row.marketKey, assetId: row.assetId, value: row.market.oi })),
+		biggestMovers: [...rows]
+			.filter((row) => !row.market.isNew)
+			.sort((a, b) => Math.abs(b.market.volumeChange) - Math.abs(a.market.volumeChange))
+			.slice(0, 5)
+			.map((row) => ({
+				marketKey: row.marketKey,
+				assetId: row.assetId,
+				value: row.market.volumeChange
+			})),
+		newMarkets: rows
+			.filter((row) => row.market.isNew)
+			.sort((a, b) => b.market.volume - a.market.volume)
+			.slice(0, 5)
+			.map((row) => ({ marketKey: row.marketKey, assetId: row.assetId, volume: row.market.volume }))
+	};
 }
 
 // --- Global / homepage ---
@@ -451,7 +727,7 @@ export function buildHomepageIntelligence(snapshot: DiffedSnapshot): HomepageInt
 		.slice(0, MAX_PER_LIST)
 		.map<GlobalMover>((m) => ({ assetId: m.id, value: m.asset.oiChange, volume: m.asset.volume }));
 
-	// Largest cross-venue price spreads
+	// Largest cross-venue reference price ranges
 	const divergences: GlobalDivergence[] = [];
 	for (const id of Object.keys(snapshot.assets)) {
 		const d = computePriceDivergence(snapshot, id);

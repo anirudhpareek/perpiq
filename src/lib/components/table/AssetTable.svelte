@@ -10,14 +10,23 @@
 	import type { ExchangeCfg, TickerCfg } from "$lib/types";
 	import BaseTable from "$components/table/BaseTable.svelte";
 	import { goto, preloadCode, preloadData } from "$app/navigation";
+	import {
+		assetMatchesSignalFilter,
+		formatSignalValue,
+		getPrimaryAssetSignal,
+		signalShortLabel
+	} from "$lib/intelligence";
 	import { createSortState, sortRows, type Column } from "$components/table/table.svelte";
 
 	let {
 		snapshot,
 		category = "all",
 		sparklines = {}
-	}: { snapshot: DiffedSnapshot; category?: string; sparklines?: Record<string, number[]> } =
-		$props();
+	}: {
+		snapshot: DiffedSnapshot;
+		category?: string;
+		sparklines?: Record<string, number[]>;
+	} = $props();
 
 	// Setup sortable table
 	type AssetKey = keyof DiffedSnapshot["assets"][0];
@@ -25,11 +34,13 @@
 
 	// Filter by category before sorting
 	const filtered = $derived(
-		category === "all"
-			? snapshot.index.assetsByVolume
-			: snapshot.index.assetsByVolume.filter(
-					(r) => snapshot.assets[r.asset]?.category === category
-				)
+		snapshot.index.assetsByVolume.filter((r) => {
+			if (category === "all") return true;
+			if (category === "new" || category === "divergences") {
+				return assetMatchesSignalFilter(snapshot, r.asset, category);
+			}
+			return snapshot.assets[r.asset]?.category === category;
+		})
 	);
 
 	// Sorted rows
@@ -44,6 +55,9 @@
 
 	// O(n) volume rank lookup
 	const rankMap = $derived(new Map(snapshot.index.assetsByVolume.map((r, i) => [r.asset, i])));
+	const signalMap = $derived(
+		new Map(Object.keys(snapshot.assets).map((id) => [id, getPrimaryAssetSignal(snapshot, id)]))
+	);
 
 	// Approximate 1H change from the sparkline tail. Series is `SPARKLINE_BATCHES`
 	// (~12) points over ~3 hours (cron is 15 min); the last ~4 points cover ~1h.
@@ -69,6 +83,7 @@
 		{ width: 20, title: "24h", sortKey: "medianRefPxChange" },
 		{ width: 22, title: "Volume", sortKey: "volume" },
 		{ width: 22, title: "OI", sortKey: "oi" },
+		{ width: 28, title: "Signal", sortKey: null },
 		{ width: 28, title: "Class", sortKey: "category" },
 		{ width: 22, title: "Chart", sortKey: null },
 		{ width: 25, title: "Venues", sortKey: null },
@@ -81,7 +96,7 @@
 	sortKey={sort.key}
 	sortDirection={sort.direction}
 	onSort={sort.toggle}
-	minWidth={1100}
+	minWidth={1220}
 	rowCount={rows.length}
 >
 	{#snippet row(index)}
@@ -91,6 +106,7 @@
 		{@const { name, icon, quote } = (tickers.perps as TickerCfg)[asset.category][assetId].meta}
 		{@const volumeRank = rankMap.get(assetId)!}
 		{@const rankDelta = previousIndex != null ? previousIndex - volumeRank : 0}
+		{@const signal = signalMap.get(assetId)}
 
 		<Table.Row
 			onmouseenter={() => {
@@ -161,18 +177,49 @@
 			<!-- Volume -->
 			<Table.Cell class="w-22">
 				<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage class="ml-1 text-[10px]" />
+				<Numeric
+					value={asset.volumeChange * 100}
+					format="numeric"
+					change
+					percentage
+					class="ml-1 text-[10px]"
+				/>
 			</Table.Cell>
 
 			<!-- OI -->
 			<Table.Cell class="w-22">
 				<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric value={asset.oiChange * 100} format="numeric" change percentage class="ml-1 text-[10px]" />
+				<Numeric
+					value={asset.oiChange * 100}
+					format="numeric"
+					change
+					percentage
+					class="ml-1 text-[10px]"
+				/>
+			</Table.Cell>
+
+			<!-- Signal -->
+			<Table.Cell class="w-28">
+				{#if signal}
+					<span
+						class="inline-flex max-w-27 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/30 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-gecko-gray uppercase"
+						title={signal.label}
+					>
+						<span class="truncate">{signalShortLabel(signal.kind)}</span>
+						{#if formatSignalValue(signal)}
+							<span class="shrink-0 text-gecko-white/75">{formatSignalValue(signal)}</span>
+						{/if}
+					</span>
+				{:else}
+					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+				{/if}
 			</Table.Cell>
 
 			<!-- Class -->
 			<Table.Cell class="w-28">
-				<span class="font-mono text-[11px] uppercase tracking-wide text-gecko-gray/80">{asset.category}</span>
+				<span class="font-mono text-[11px] tracking-wide text-gecko-gray/80 uppercase"
+					>{asset.category}</span
+				>
 			</Table.Cell>
 
 			<!-- Mini chart -->
@@ -187,7 +234,7 @@
 			<!-- Venues -->
 			<Table.Cell class="w-25">
 				<IconScroll>
-					{#each asset.marketIds as marketId}
+					{#each asset.marketIds as marketId (marketId)}
 						{@const { venue, namespace } = snapshot.markets[marketId]}
 						{@const { name, icon } = (exchanges as ExchangeCfg)[`${venue}:${namespace}`]}
 

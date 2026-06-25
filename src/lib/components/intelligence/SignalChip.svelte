@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Signal } from "$lib/intelligence";
+	import { formatSignalValue, signalShortLabel } from "$lib/intelligence";
 
 	let { signal }: { signal: Signal } = $props();
 
@@ -11,11 +12,13 @@
 </script>
 
 <span
-	class="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide {palette[
+	class="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[9px] tracking-wide uppercase {palette[
 		signal.severity
 	]}"
 	title={signal.label}
 >
-	<span>{signal.kind.replace(/_/g, " ")}</span>
-	<span class="opacity-75">{signal.label}</span>
+	<span>{signalShortLabel(signal.kind)}</span>
+	{#if formatSignalValue(signal)}
+		<span class="opacity-70">{formatSignalValue(signal)}</span>
+	{/if}
 </span>

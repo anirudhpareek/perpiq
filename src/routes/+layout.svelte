@@ -3,7 +3,6 @@
 	import "../shadcn.css";
 	import Header from "$components/Header.svelte";
 	import Footer from "$components/Footer.svelte";
-	import Subheader from "$components/Subheader.svelte";
 
 	let { children } = $props();
 </script>
@@ -12,9 +11,6 @@
 <div class="flex min-h-dvh flex-col">
 	<!-- Header -->
 	<Header class="order-1 lg:order-2" />
-
-	<!-- Subheader -->
-	<Subheader class="order-2 lg:order-1" />
 
 	<!-- Content -->
 	<main class="order-3 flex flex-1 flex-row justify-center">

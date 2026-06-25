@@ -212,7 +212,7 @@
 {/if}
 
 {#if hasData && asset}
-	<!-- Intelligence panel -->
+	<!-- Market context panel -->
 	<AssetIntelligence {snapshot} assetId={data.asset} />
 
 	<!-- Underlying equity context (stocks only) -->

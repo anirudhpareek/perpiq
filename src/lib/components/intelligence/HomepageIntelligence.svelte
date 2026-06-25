@@ -2,7 +2,6 @@
 	import { goto } from "$app/navigation";
 	import Icon from "$components/Icon.svelte";
 	import tickers from "$config/tickers.json";
-	import Numeric from "$components/Numeric.svelte";
 	import exchanges from "$config/exchanges.json";
 	import Sparkline from "$components/Sparkline.svelte";
 	import type { ExchangeCfg, TickerCfg } from "$lib/types";
@@ -40,16 +39,16 @@
 			}))
 	);
 
-	type TabId = "gainers" | "losers" | "oi_up" | "oi_down" | "spreads" | "new";
+	type TabId = "gainers" | "losers" | "oi_up" | "oi_down" | "ranges" | "new";
 	let tab = $state<TabId>("gainers");
 
 	const tabs: { id: TabId; label: string }[] = [
-		{ id: "gainers", label: "Gainers" },
-		{ id: "losers", label: "Losers" },
+		{ id: "gainers", label: "Price up" },
+		{ id: "losers", label: "Price down" },
 		{ id: "oi_up", label: "OI inflows" },
 		{ id: "oi_down", label: "OI outflows" },
-		{ id: "spreads", label: "Spreads" },
-		{ id: "new", label: "New markets" }
+		{ id: "ranges", label: "Ref ranges" },
+		{ id: "new", label: "New listings" }
 	];
 
 	const ticks = tickers.perps as TickerCfg;
@@ -125,8 +124,8 @@
 						primaryTone: r.oiChange >= 0 ? "up" : "down",
 						secondary: `OI ${nice(r.oi)}`
 					}));
-			case "spreads": {
-				const spreads = Object.keys(snapshot.assets)
+			case "ranges": {
+				const ranges = Object.keys(snapshot.assets)
 					.map((id) => {
 						const d = computePriceDivergence(snapshot, id);
 						return d ? { assetId: id, bps: d.bps } : null;
@@ -134,11 +133,11 @@
 					.filter((x): x is { assetId: string; bps: number } => !!x)
 					.sort((a, b) => b.bps - a.bps)
 					.slice(0, ROW_LIMIT);
-				return spreads.map((s) => ({
-					assetId: s.assetId,
-					primary: fmtBps(s.bps),
+				return ranges.map((range) => ({
+					assetId: range.assetId,
+					primary: fmtBps(range.bps),
 					primaryTone: "neutral",
-					secondary: "cross-venue"
+					secondary: "reference range"
 				}));
 			}
 			case "new":
@@ -170,20 +169,20 @@
 		<!-- Section header -->
 		<div class="flex flex-col gap-1">
 			<div class="flex items-baseline gap-3">
-				<h2 class="text-base font-medium text-gecko-white md:text-lg">Market intelligence</h2>
+				<h2 class="text-base font-medium text-gecko-white md:text-lg">Market signals</h2>
 				<span class="text-xs text-gecko-gray/60">
-					Derived from real-time RWA perp market data
+					Global changes across volume, OI, listings, and reference prices
 				</span>
 			</div>
 		</div>
 
 		<!-- Tabs (uniswap-style chips) -->
 		<div class="flex flex-wrap items-center gap-1.5">
-			{#each tabs as t}
+			{#each tabs as t (t.id)}
 				<button
 					type="button"
 					onclick={() => (tab = t.id)}
-					class="press rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wide {tab ===
+					class="press rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {tab ===
 					t.id
 						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 						: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
@@ -196,11 +195,13 @@
 		<!-- Rows -->
 		<div class="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
 			{#if rows.length === 0}
-				<div class="col-span-full rounded-md border border-gecko-shade/60 bg-gecko-shade/10 px-4 py-6 text-xs text-gecko-gray/70">
+				<div
+					class="col-span-full rounded-md border border-gecko-shade/60 bg-gecko-shade/10 px-4 py-6 text-xs text-gecko-gray/70"
+				>
 					No qualifying entries yet — wait for the next batch.
 				</div>
 			{:else}
-				{#each rows as r}
+				{#each rows as r (r.assetId)}
 					{@const m = assetMeta(r.assetId)}
 					{#if m}
 						<button
@@ -213,7 +214,7 @@
 							</div>
 							<div class="flex flex-1 flex-col">
 								<span class="text-sm text-gecko-white">{m.name}</span>
-								<span class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/60">
+								<span class="font-mono text-[10px] tracking-wide text-gecko-gray/60 uppercase">
 									{r.secondary}
 								</span>
 							</div>
@@ -241,5 +242,41 @@
 				{/each}
 			{/if}
 		</div>
+
+		{#if intel.venueShifts.length > 0}
+			<div class="border-t border-t-gecko-shade/70 pt-3">
+				<div class="mb-2 font-mono text-[10px] tracking-wide text-gecko-gray/60 uppercase">
+					Venue share shifts
+				</div>
+				<div class="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
+					{#each intel.venueShifts as shift (shift.venue)}
+						{@const ex = exchangeMeta(shift.venue, "")}
+						{#if ex}
+							<a
+								href="/venue/{shift.venue}"
+								class="group press flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left hover:border-gecko-shade hover:bg-gecko-shade/30"
+							>
+								<div class="flex w-7 items-center justify-center">
+									<Icon src={ex.icon} alt={ex.name} />
+								</div>
+								<div class="flex flex-1 flex-col">
+									<span class="text-sm text-gecko-white">{ex.name}</span>
+									<span class="font-mono text-[10px] tracking-wide text-gecko-gray/60 uppercase">
+										OI share {(shift.oiShare * 100).toFixed(1)}%
+									</span>
+								</div>
+								<span
+									class="w-24 text-right font-mono text-xs {shift.oiShareChange >= 0
+										? 'text-emerald-400'
+										: 'text-red-400'}"
+								>
+									{fmtPct(shift.oiShareChange)}
+								</span>
+							</a>
+						{/if}
+					{/each}
+				</div>
+			</div>
+		{/if}
 	</div>
 </section>

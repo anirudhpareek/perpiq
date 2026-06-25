@@ -2,12 +2,17 @@
 	import * as Table from "$shadcn/table";
 	import { marketToURL } from "$lib/utils";
 	import Icon from "$components/Icon.svelte";
-	import tickers from "$config/tickers.json";
 	import exchanges from "$config/exchanges.json";
-	import type { TickerCfg, ExchangeCfg } from "$lib/types";
+	import type { ExchangeCfg } from "$lib/types";
 	import BaseTable from "$components/table/BaseTable.svelte";
 	import { MARKET_TO_ASSET, type DiffedSnapshot } from "$lib/transform";
-	import Numeric, { getNormalizedCurrency } from "$components/Numeric.svelte";
+	import Numeric from "$components/Numeric.svelte";
+	import {
+		assetMatchesSignalFilter,
+		formatSignalValue,
+		getPrimaryMarketSignal,
+		signalShortLabel
+	} from "$lib/intelligence";
 	import { createSortState, sortRows, type Column } from "$components/table/table.svelte";
 
 	// Setup sortable table
@@ -15,26 +20,36 @@
 	const sort = createSortState<MarketKey>("volume");
 
 	// Minimally-optimized filter
-	type Filter = { assetId?: string; venue?: string; namespace?: string };
+	type Filter = { assetId?: string; venue?: string; namespace?: string; category?: string };
 
 	// Collect snapshot, custom market filters
 	let { snapshot, filter }: { snapshot: DiffedSnapshot; filter?: Filter } = $props();
 
 	// Filter over just market ID candidate set
 	const marketIds = $derived.by(() => {
+		let ids: string[];
 		// Collect marketIDs by specific assetID (asset pages)
-		if (filter?.assetId) return snapshot.assets[filter.assetId]?.marketIds ?? [];
-
+		if (filter?.assetId) ids = snapshot.assets[filter.assetId]?.marketIds ?? [];
 		// Collect marketIDs by {venue, namespace}-filtering over full set
-		if (filter?.venue) {
-			const ids = snapshot.index.marketsByVenue[filter.venue] ?? [];
-			return filter.namespace
+		else if (filter?.venue) {
+			ids = snapshot.index.marketsByVenue[filter.venue] ?? [];
+			ids = filter.namespace
 				? ids.filter((id) => snapshot.markets[id].namespace === filter.namespace)
 				: ids;
 		}
 
 		// Else, return all market IDs
-		return Object.keys(snapshot.markets);
+		else ids = Object.keys(snapshot.markets);
+
+		if (!filter?.category || filter.category === "all") return ids;
+		if (filter.category === "new") return ids.filter((id) => snapshot.markets[id]?.isNew);
+		if (filter.category === "divergences") {
+			return ids.filter((id) => {
+				const meta = MARKET_TO_ASSET.get(id);
+				return meta ? assetMatchesSignalFilter(snapshot, meta.asset, "divergences") : false;
+			});
+		}
+		return ids.filter((id) => MARKET_TO_ASSET.get(id)?.category === filter.category);
 	});
 
 	// Sort IDs via lookup (don't prematurely allocate `MarketRow` via `map`)
@@ -46,6 +61,9 @@
 			sort.direction
 		)
 	);
+	const signalMap = $derived(
+		new Map(Object.keys(snapshot.markets).map((id) => [id, getPrimaryMarketSignal(snapshot, id)]))
+	);
 
 	// Setup columns/headers
 	const columns: Column<MarketKey>[] = [
@@ -55,6 +73,7 @@
 		{ width: 24, title: "24h", sortKey: "volumeChange" },
 		{ width: 20, title: "OI", sortKey: "oi" },
 		{ width: 24, title: "24h", sortKey: "oiChange" },
+		{ width: 28, title: "Signal", sortKey: null },
 		{ width: 26, title: "Price", sortKey: null },
 		{ width: 24, title: "24h", sortKey: "refPxChange" }
 	];
@@ -66,7 +85,7 @@
 	sortKey={sort.key}
 	sortDirection={sort.direction}
 	onSort={sort.toggle}
-	minWidth={940}
+	minWidth={1040}
 	rowCount={sortedIds.length}
 >
 	<!-- Purposefully leave rank not fixed to volume for market table -->
@@ -75,6 +94,7 @@
 		{@const market = snapshot.markets[id]}
 		{@const { name, quote, venueQuote } = MARKET_TO_ASSET.get(id)!}
 		{@const exchange = (exchanges as ExchangeCfg)[`${market.venue}:${market.namespace}`]}
+		{@const signal = signalMap.get(id)}
 
 		<Table.Row
 			onclick={() =>
@@ -127,6 +147,23 @@
 			<!-- OI change -->
 			<Table.Cell class="w-24">
 				<Numeric value={market.oiChange * 100} format="numeric" change percentage />
+			</Table.Cell>
+
+			<!-- Signal -->
+			<Table.Cell class="w-28">
+				{#if signal}
+					<span
+						class="inline-flex max-w-27 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/30 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-gecko-gray uppercase"
+						title={signal.label}
+					>
+						<span class="truncate">{signalShortLabel(signal.kind)}</span>
+						{#if formatSignalValue(signal)}
+							<span class="shrink-0 text-gecko-white/75">{formatSignalValue(signal)}</span>
+						{/if}
+					</span>
+				{:else}
+					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+				{/if}
 			</Table.Cell>
 
 			<!-- Ref price -->

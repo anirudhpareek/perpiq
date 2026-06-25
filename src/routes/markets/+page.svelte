@@ -11,10 +11,12 @@
 	import LazyChart from "$components/LazyChart.svelte";
 	import MarketTable from "$components/table/MarketTable.svelte";
 	import { MARKET_TO_ASSET, type DiffedSnapshot } from "$lib/transform";
+	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
 	import Numeric, { truncateCurrency } from "$components/Numeric.svelte";
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot as DiffedSnapshot);
+	let category = $state<Category>("all");
 
 	// Stats
 	const venueCount = $derived(snapshot.aggregates.exchangeStats.length);
@@ -72,9 +74,12 @@
 				backgroundColor: "#121218",
 				borderColor: "#1f1f24",
 				textStyle: { color: "#f3f3f3", fontSize: 11 },
-				formatter: (params: any) => {
-					const [oi, vol] = params.value;
-					return `<b>${params.name}</b><br/>OI: $${truncateCurrency(oi)}<br/>Volume: $${truncateCurrency(vol)}`;
+				formatter: (params) => {
+					const point = Array.isArray(params) ? params[0] : params;
+					const value = Array.isArray(point.value) ? point.value : [0, 0];
+					const oi = Number(value[0] ?? 0);
+					const vol = Number(value[1] ?? 0);
+					return `<b>${String(point.name ?? "")}</b><br/>OI: $${truncateCurrency(oi)}<br/>Volume: $${truncateCurrency(vol)}`;
 				}
 			},
 			legend: { show: false }
@@ -116,7 +121,7 @@
 	<Card title="Open Interest Dominance" class="md:flex-3">
 		<!-- Table content -->
 		<div class="flex flex-col">
-			{#each snapshot.aggregates.oiByVenue as { venue, oiShare }, i}
+			{#each snapshot.aggregates.oiByVenue as { venue, oiShare }, i (venue)}
 				{@const { name, icon } = exchanges[`${venue}:` as keyof typeof exchanges]}
 
 				<a
@@ -152,6 +157,7 @@
 </Grid>
 
 <!-- Table of all markets -->
+<CategoryPills bind:value={category} />
 <div class="md:border-t md:border-t-gecko-shade">
-	<MarketTable {snapshot} />
+	<MarketTable {snapshot} filter={{ category }} />
 </div>
