@@ -49,7 +49,7 @@
 								preloadData(`/asset/${r.id}`);
 							}}
 							onclick={() => goto(`/asset/${r.id}`)}
-							class="group flex flex-col rounded-md border border-gecko-shade/80 bg-gecko-shade/20 p-3 text-left transition hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
+							class="group press flex flex-col rounded-2xl border border-gecko-shade/80 bg-gecko-shade/20 p-3 text-left hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
 						>
 							<div class="flex items-center gap-2">
 								<div class="flex w-6 items-center justify-center">

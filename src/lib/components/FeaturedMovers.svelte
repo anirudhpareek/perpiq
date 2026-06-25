@@ -36,6 +36,19 @@
 	}
 </script>
 
+<style>
+	@keyframes feat-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.985);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+</style>
+
 {#if cards.length > 0}
 	<section class="border-b border-b-gecko-shade bg-gecko-black/30">
 		<div class="mx-auto flex max-w-7xl flex-col px-4 py-5 md:px-8 md:py-6">
@@ -68,7 +81,8 @@
 								preloadData(`/asset/${id}`);
 							}}
 							onclick={() => goto(`/asset/${id}`)}
-							class="group flex flex-col rounded-2xl border border-gecko-shade/80 bg-gecko-shade/20 p-4 text-left transition hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
+							class="group press flex flex-col rounded-2xl border border-gecko-shade/80 bg-gecko-shade/20 p-4 text-left hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
+							style="animation: feat-in 480ms var(--ease-tactile) backwards; animation-delay: {(cards.findIndex((c) => c.id === id) * 80) + 60}ms;"
 						>
 							<div class="flex items-center gap-2">
 								<div class="flex w-7 items-center justify-center">

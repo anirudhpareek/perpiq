@@ -17,13 +17,82 @@
 	/* Setup font */
 	--font-display: "Inter", system-ui, -apple-system, sans-serif;
 
-	/* Colors */
-	--color-gecko-black: #121218;
-	--color-gecko-shade: #1f1f24;
-	--color-gecko-muted: #595969;
-	--color-gecko-black-hover: #1f1f24;
-	--color-gecko-white: #f3f3f3;
-	--color-gecko-gray: #b4b4b6;
-	--color-gecko-green: #1bd289;
-	--color-gecko-red: #ff384f;
+	/* Colors — OKLCH for perceptual uniformity (oklch-skill).
+	   L spaced for clear contrast steps; chroma kept low on neutrals to
+	   prevent surface tinting in dark UI. Reds/greens use higher chroma
+	   for state legibility on financial diff numbers. */
+	--color-gecko-black: oklch(0.165 0.013 270); /* near-black surface */
+	--color-gecko-shade: oklch(0.22 0.012 270); /* elevated surface */
+	--color-gecko-muted: oklch(0.45 0.015 270); /* muted divider */
+	--color-gecko-black-hover: oklch(0.225 0.012 270); /* hover bg */
+	--color-gecko-white: oklch(0.97 0.003 270); /* text-high */
+	--color-gecko-gray: oklch(0.78 0.005 270); /* text-mid */
+	--color-gecko-green: oklch(0.78 0.18 152); /* positive */
+	--color-gecko-red: oklch(0.68 0.22 27); /* negative */
+
+	/* Motion tokens (DESIGN.md: default easing) */
+	--ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-cross: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Root: font smoothing + numeric defaults (emil-design-eng) */
+html {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+body {
+	/* tabular-nums everywhere by default since this UI is numeric-heavy.
+	   Prevents layout shift on live-updating prices/percentages. */
+	font-variant-numeric: tabular-nums;
+}
+
+/* Headings: balance to avoid orphans on short titles. */
+h1,
+h2,
+h3 {
+	text-wrap: balance;
+}
+
+/* Body copy: pretty wrapping (no orphans). */
+p,
+li,
+figcaption {
+	text-wrap: pretty;
+}
+
+/* Press state util — DESIGN.md "interactions physical" + emil's 0.96 rule.
+   Apply via class="press" on tactile interactive elements. */
+.press {
+	transition-property: transform, background-color, border-color, color;
+	transition-duration: 180ms;
+	transition-timing-function: var(--ease-tactile);
+}
+.press:active {
+	transform: scale(0.96);
+	transition-duration: 60ms;
+}
+
+/* Subtle image outline for dark mode — pure white at 8%, never tinted (emil). */
+img {
+	outline: 1px solid rgba(255, 255, 255, 0.08);
+	outline-offset: -1px;
+}
+
+/* Don't outline brand/logo svgs that handle their own framing. */
+.no-outline,
+.no-outline img {
+	outline: none;
+}
+
+/* Respect reduced motion (DESIGN.md). */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
 }

@@ -183,7 +183,7 @@
 				<button
 					type="button"
 					onclick={() => (tab = t.id)}
-					class="rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wide transition {tab ===
+					class="press rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wide {tab ===
 					t.id
 						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 						: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
@@ -206,7 +206,7 @@
 						<button
 							type="button"
 							onclick={() => goto(`/asset/${r.assetId}`)}
-							class="group flex items-center gap-3 rounded-sm border border-transparent px-2 py-2 text-left transition hover:border-gecko-shade hover:bg-gecko-shade/30"
+							class="group press flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left hover:border-gecko-shade hover:bg-gecko-shade/30"
 						>
 							<div class="flex w-7 items-center justify-center">
 								<Icon src={m.icon} alt={m.name} />

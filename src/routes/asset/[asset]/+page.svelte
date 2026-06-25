@@ -129,7 +129,7 @@
 					{#each ["1H", "1D", "1W", "1M", "1Y", "All"] as r}
 						<button
 							type="button"
-							class="rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide transition {r ===
+							class="press rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide {r ===
 							'1D'
 								? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 								: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
