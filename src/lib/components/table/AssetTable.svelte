@@ -14,7 +14,7 @@
 		assetMatchesSignalFilter,
 		formatSignalValue,
 		getPrimaryAssetSignal,
-		signalShortLabel
+		type SignalKind
 	} from "$lib/intelligence";
 	import { createSortState, sortRows, type Column } from "$components/table/table.svelte";
 
@@ -73,6 +73,29 @@
 		return (last - first) / first;
 	}
 
+	function tableSignalLabel(kind: SignalKind): string {
+		switch (kind) {
+			case "volume_spike":
+				return "Vol spike";
+			case "volume_drop":
+				return "Vol drop";
+			case "oi_spike":
+				return "OI build";
+			case "oi_drop":
+				return "OI cut";
+			case "price_divergence":
+				return "Range";
+			case "new_market":
+				return "New";
+			case "high_concentration":
+				return "Concentration";
+			case "venue_dominance_shift":
+				return "Venue shift";
+			case "stale_market":
+				return "No vol";
+		}
+	}
+
 	// Setup columns/headers
 	const columns: Column<AssetKey>[] = [
 		{ width: 10, title: "", sortKey: null },
@@ -81,12 +104,11 @@
 		{ width: 26, title: "Price", sortKey: null },
 		{ width: 16, title: "1H", sortKey: null },
 		{ width: 20, title: "24h", sortKey: "medianRefPxChange" },
-		{ width: 22, title: "Volume", sortKey: "volume" },
-		{ width: 22, title: "OI", sortKey: "oi" },
-		{ width: 28, title: "Signal", sortKey: null },
-		{ width: 28, title: "Class", sortKey: "category" },
-		{ width: 22, title: "Chart", sortKey: null },
-		{ width: 25, title: "Venues", sortKey: null },
+		{ width: 30, title: "Volume", sortKey: "volume" },
+		{ width: 30, title: "OI", sortKey: "oi" },
+		{ width: 38, title: "Signal", sortKey: null },
+		{ width: 24, title: "Chart", sortKey: null },
+		{ width: 28, title: "Venues", sortKey: null },
 		{ width: 3, title: "", sortKey: null }
 	];
 </script>
@@ -98,6 +120,7 @@
 	onSort={sort.toggle}
 	minWidth={1220}
 	rowCount={rows.length}
+	rowSizePx={44}
 >
 	{#snippet row(index)}
 		<!-- Collect asset data + metadata -->
@@ -115,7 +138,7 @@
 				preloadData(`/asset/${assetId}`);
 			}}
 			onclick={() => goto(`/asset/${assetId}`)}
-			class="h-10 cursor-pointer border-b-gecko-shade text-xs transition-none hover:bg-gecko-black-hover [&_td]:px-0 [&_td]:text-left [&_td]:align-middle"
+			class="h-11 cursor-pointer border-b-gecko-shade text-xs transition-none hover:bg-gecko-black-hover [&_td]:px-0 [&_td]:text-left [&_td]:align-middle"
 		>
 			<!-- Ranking change -->
 			<Table.Cell class="w-10 text-center!"><Numeric value={rankDelta} change /></Table.Cell>
@@ -139,12 +162,14 @@
 
 			<!-- Asset -->
 			<Table.Cell class="py-0 pr-0">
-				<span class="flex items-center">
-					<div class="flex w-7 items-center justify-center">
+				<span class="flex min-w-0 items-center">
+					<div class="flex w-7 shrink-0 items-center justify-center">
 						<Icon src={icon} alt={name} />
 					</div>
-					<span class="ml-2 font-medium text-gecko-white">{name}</span>
-					<span class="ml-1 font-mono text-[11px] text-gecko-gray/70">{assetId.toUpperCase()}</span>
+					<span class="ml-2 truncate font-medium text-gecko-white">{name}</span>
+					<span class="ml-1 shrink-0 font-mono text-[11px] text-gecko-gray/70">
+						{assetId.toUpperCase()}
+					</span>
 				</span>
 			</Table.Cell>
 
@@ -175,37 +200,41 @@
 			</Table.Cell>
 
 			<!-- Volume -->
-			<Table.Cell class="w-22">
-				<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric
-					value={asset.volumeChange * 100}
-					format="numeric"
-					change
-					percentage
-					class="ml-1 text-[10px]"
-				/>
+			<Table.Cell class="w-30">
+				<div class="flex min-w-0 flex-col gap-0.5 leading-none">
+					<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
+					<Numeric
+						value={asset.volumeChange * 100}
+						format="numeric"
+						change
+						percentage
+						class="text-[10px]"
+					/>
+				</div>
 			</Table.Cell>
 
 			<!-- OI -->
-			<Table.Cell class="w-22">
-				<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
-				<Numeric
-					value={asset.oiChange * 100}
-					format="numeric"
-					change
-					percentage
-					class="ml-1 text-[10px]"
-				/>
+			<Table.Cell class="w-30">
+				<div class="flex min-w-0 flex-col gap-0.5 leading-none">
+					<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
+					<Numeric
+						value={asset.oiChange * 100}
+						format="numeric"
+						change
+						percentage
+						class="text-[10px]"
+					/>
+				</div>
 			</Table.Cell>
 
 			<!-- Signal -->
-			<Table.Cell class="w-28">
+			<Table.Cell class="w-38">
 				{#if signal}
 					<span
-						class="inline-flex max-w-27 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/30 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-gecko-gray uppercase"
+						class="inline-flex max-w-36 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/30 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-gecko-gray uppercase"
 						title={signal.label}
 					>
-						<span class="truncate">{signalShortLabel(signal.kind)}</span>
+						<span class="truncate">{tableSignalLabel(signal.kind)}</span>
 						{#if formatSignalValue(signal)}
 							<span class="shrink-0 text-gecko-white/75">{formatSignalValue(signal)}</span>
 						{/if}
@@ -215,15 +244,8 @@
 				{/if}
 			</Table.Cell>
 
-			<!-- Class -->
-			<Table.Cell class="w-28">
-				<span class="font-mono text-[11px] tracking-wide text-gecko-gray/80 uppercase"
-					>{asset.category}</span
-				>
-			</Table.Cell>
-
 			<!-- Mini chart -->
-			<Table.Cell class="w-22">
+			<Table.Cell class="w-24">
 				{#if sparklines[assetId]?.length}
 					<Sparkline series={sparklines[assetId]} width={70} height={22} />
 				{:else}
@@ -232,7 +254,7 @@
 			</Table.Cell>
 
 			<!-- Venues -->
-			<Table.Cell class="w-25">
+			<Table.Cell class="w-28">
 				<IconScroll>
 					{#each asset.marketIds as marketId (marketId)}
 						{@const { venue, namespace } = snapshot.markets[marketId]}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ArrowRight, ArrowUpRight } from "@lucide/svelte";
 	import Icon from "$components/Icon.svelte";
 	import tickers from "$config/tickers.json";
 	import Numeric from "$components/Numeric.svelte";
@@ -152,9 +153,10 @@
 				</div>
 				<a
 					href="/markets"
-					class="font-mono text-[11px] tracking-wide text-gecko-gray uppercase hover:text-gecko-white"
+					class="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-wide text-gecko-gray uppercase transition-colors duration-150 ease-out hover:text-gecko-white"
 				>
-					View all →
+					View all
+					<ArrowRight size={13} strokeWidth={1.9} aria-hidden="true" />
 				</a>
 			</div>
 
@@ -177,7 +179,7 @@
 								80 +
 								60}ms;"
 						>
-							<div class="flex items-center gap-2">
+							<div class="flex items-center gap-2.5">
 								<div class="flex w-7 items-center justify-center">
 									<Icon src={m.icon} alt={m.name} />
 								</div>
@@ -187,11 +189,12 @@
 										{card.label}
 									</span>
 								</div>
-								<span
-									class="font-mono text-[10px] text-gecko-gray/50 uppercase group-hover:text-gecko-gray"
-								>
-									→
-								</span>
+								<ArrowUpRight
+									size={14}
+									strokeWidth={1.75}
+									class="text-gecko-gray/45 transition-[color,transform] duration-150 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-gecko-gray"
+									aria-hidden="true"
+								/>
 							</div>
 
 							<div class="mt-3 flex items-baseline justify-between gap-2">

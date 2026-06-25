@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { ExternalLink } from "@lucide/svelte";
 	import Numeric from "$components/Numeric.svelte";
 
 	let { class: extraClass }: { class?: string } = $props();
@@ -44,7 +45,7 @@
 	>
 		{#each stats as s}
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					{s.label}
 				</span>
 				<div class="flex items-baseline gap-1.5">
@@ -63,7 +64,7 @@
 
 		{#if ven.length > 0}
 			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
 					OI Dominance
 				</span>
 				<div class="flex items-baseline gap-2 text-sm">
@@ -87,9 +88,11 @@
 				href="https://github.com/anirudhpareek/perpiq"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/60 hover:text-gecko-white"
-				>View on GitHub →</a
+				class="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-wide text-gecko-gray/60 uppercase transition-colors duration-150 ease-out hover:text-gecko-white"
 			>
+				View on GitHub
+				<ExternalLink size={12} strokeWidth={1.8} aria-hidden="true" />
+			</a>
 		</div>
 	</div>
 </section>

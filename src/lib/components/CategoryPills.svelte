@@ -1,4 +1,15 @@
 <script lang="ts">
+	import {
+		Activity,
+		BadgeDollarSign,
+		ChartCandlestick,
+		CircleDollarSign,
+		Gem,
+		Globe2,
+		LineChart,
+		Sparkles
+	} from "@lucide/svelte";
+
 	export type Category =
 		| "all"
 		| "stocks"
@@ -11,15 +22,15 @@
 
 	let { value = $bindable("all") }: { value: Category } = $props();
 
-	const opts: { id: Category; label: string }[] = [
-		{ id: "all", label: "All" },
-		{ id: "stocks", label: "Stocks" },
-		{ id: "indices", label: "Indices" },
-		{ id: "commodities", label: "Commodities" },
-		{ id: "fx", label: "FX" },
-		{ id: "pre-ipo", label: "Pre-IPO" },
-		{ id: "new", label: "New markets" },
-		{ id: "divergences", label: "Divergences" }
+	const opts: { id: Category; label: string; icon: typeof Activity }[] = [
+		{ id: "all", label: "All", icon: Activity },
+		{ id: "stocks", label: "Stocks", icon: BadgeDollarSign },
+		{ id: "indices", label: "Indices", icon: LineChart },
+		{ id: "commodities", label: "Commodities", icon: Gem },
+		{ id: "fx", label: "FX", icon: Globe2 },
+		{ id: "pre-ipo", label: "Pre-IPO", icon: CircleDollarSign },
+		{ id: "new", label: "New markets", icon: Sparkles },
+		{ id: "divergences", label: "Divergences", icon: ChartCandlestick }
 	];
 </script>
 
@@ -27,14 +38,21 @@
 	class="flex flex-wrap items-center gap-1.5 border-b border-b-gecko-shade bg-gecko-black px-4 py-3 md:px-8"
 >
 	{#each opts as opt (opt.id)}
+		{@const FilterIcon = opt.icon}
 		<button
 			type="button"
 			onclick={() => (value = opt.id)}
-			class="press rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {value ===
+			class="press inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {value ===
 			opt.id
 				? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 				: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
 		>
+			<FilterIcon
+				size={13}
+				strokeWidth={1.9}
+				class={value === opt.id ? "text-gecko-white" : "text-gecko-gray/65"}
+				aria-hidden="true"
+			/>
 			{opt.label}
 		</button>
 	{/each}

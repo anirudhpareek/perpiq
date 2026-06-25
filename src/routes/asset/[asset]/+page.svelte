@@ -100,9 +100,6 @@
 					<h1 class="text-xl font-semibold text-gecko-white md:text-2xl">{meta.name}</h1>
 					<span class="font-mono text-xs text-gecko-gray/80">{data.asset.toUpperCase()}</span>
 				</div>
-				{#if asset?.category}
-					<span class="text-[11px] text-gecko-gray/70 capitalize">{asset.category}</span>
-				{/if}
 			</div>
 		</div>
 
@@ -131,12 +128,12 @@
 	</div>
 </div>
 
-<!-- Stats grid (uniswap-style 6-cell row) -->
+<!-- Stats grid (uniswap-style compact row) -->
 {#if hasData && asset}
 	{@const venueCount = new Set(asset.marketIds.map((id) => snapshot.markets[id].venue)).size}
 	<div class="border-b border-b-gecko-shade">
 		<div
-			class="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:grid-cols-3 lg:grid-cols-6 lg:px-8"
+			class="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:grid-cols-3 lg:grid-cols-5 lg:px-8"
 		>
 			<div class="flex flex-col gap-0.5">
 				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
@@ -187,12 +184,6 @@
 				</span>
 				<span class="text-sm font-medium text-gecko-white">{venueCount}</span>
 				<span class="text-[10px] text-gecko-gray/60">unique exchanges</span>
-			</div>
-			<div class="flex flex-col gap-0.5">
-				<span class="text-[10px] font-medium tracking-wide text-gecko-gray/70 uppercase">
-					Asset class
-				</span>
-				<span class="text-sm font-medium text-gecko-white capitalize">{asset.category}</span>
 			</div>
 		</div>
 	</div>

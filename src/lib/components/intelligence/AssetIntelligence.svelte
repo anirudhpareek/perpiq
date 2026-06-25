@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ExternalLink } from "@lucide/svelte";
 	import Card from "$components/Card.svelte";
 	import Grid from "$components/Grid.svelte";
 	import Icon from "$components/Icon.svelte";
@@ -152,7 +153,12 @@
 											class="text-gecko-white"
 										/>
 									</span>
-									<span class="pl-2 text-gecko-gray">↗</span>
+									<ExternalLink
+										size={13}
+										strokeWidth={1.8}
+										class="justify-self-end text-gecko-gray"
+										aria-hidden="true"
+									/>
 								</a>
 							{/if}
 						{/each}
@@ -160,7 +166,7 @@
 				</div>
 			</Card>
 
-			<Card title="Cross-venue ref price range">
+			<Card title="Venue price range">
 				<div class="flex flex-1 flex-col p-4">
 					{#if intel.priceDivergence}
 						{@const d = intel.priceDivergence}
@@ -188,9 +194,10 @@
 									)}
 									target="_blank"
 									rel="noopener"
-									class="font-mono text-gecko-gray hover:text-gecko-white"
+									class="inline-flex items-center gap-1.5 font-mono text-gecko-gray transition-colors duration-150 ease-out hover:text-gecko-white"
 								>
-									{marketLabel(d.lowMarketKey)} ↗
+									{marketLabel(d.lowMarketKey)}
+									<ExternalLink size={12} strokeWidth={1.8} aria-hidden="true" />
 								</a>
 							</div>
 							<div>
@@ -211,9 +218,10 @@
 									)}
 									target="_blank"
 									rel="noopener"
-									class="font-mono text-gecko-gray hover:text-gecko-white"
+									class="inline-flex items-center gap-1.5 font-mono text-gecko-gray transition-colors duration-150 ease-out hover:text-gecko-white"
 								>
-									{marketLabel(d.highMarketKey)} ↗
+									{marketLabel(d.highMarketKey)}
+									<ExternalLink size={12} strokeWidth={1.8} aria-hidden="true" />
 								</a>
 							</div>
 						</div>
