@@ -183,7 +183,7 @@
 				<button
 					type="button"
 					onclick={() => (tab = t.id)}
-					class="rounded-sm border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide transition {tab ===
+					class="rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wide transition {tab ===
 					t.id
 						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 						: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"

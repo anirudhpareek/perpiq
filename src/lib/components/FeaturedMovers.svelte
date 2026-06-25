@@ -39,14 +39,22 @@
 {#if cards.length > 0}
 	<section class="border-b border-b-gecko-shade bg-gecko-black/30">
 		<div class="mx-auto flex max-w-7xl flex-col px-4 py-5 md:px-8 md:py-6">
-			<div class="flex items-baseline gap-3 pb-4">
-				<h2 class="text-base font-medium text-gecko-white md:text-lg">Featured</h2>
-				<span class="rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-emerald-300">
-					Live
-				</span>
-				<span class="text-xs text-gecko-gray/70">
-					Top RWA perp markets by 24h volume
-				</span>
+			<div class="flex items-baseline justify-between gap-3 pb-4">
+				<div class="flex items-baseline gap-3">
+					<h2 class="text-base font-medium text-gecko-white md:text-lg">Featured</h2>
+					<span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-emerald-300">
+						Live
+					</span>
+					<span class="hidden text-xs text-gecko-gray/70 md:inline">
+						Top RWA perp markets by 24h volume
+					</span>
+				</div>
+				<a
+					href="/markets"
+					class="font-mono text-[11px] uppercase tracking-wide text-gecko-gray hover:text-gecko-white"
+				>
+					View all →
+				</a>
 			</div>
 
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -60,7 +68,7 @@
 								preloadData(`/asset/${id}`);
 							}}
 							onclick={() => goto(`/asset/${id}`)}
-							class="group flex flex-col rounded-md border border-gecko-shade/80 bg-gecko-shade/20 p-4 text-left transition hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
+							class="group flex flex-col rounded-2xl border border-gecko-shade/80 bg-gecko-shade/20 p-4 text-left transition hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
 						>
 							<div class="flex items-center gap-2">
 								<div class="flex w-7 items-center justify-center">

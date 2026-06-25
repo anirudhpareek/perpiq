@@ -45,17 +45,30 @@
 	// O(n) volume rank lookup
 	const rankMap = $derived(new Map(snapshot.index.assetsByVolume.map((r, i) => [r.asset, i])));
 
+	// Approximate 1H change from the sparkline tail. Series is `SPARKLINE_BATCHES`
+	// (~12) points over ~3 hours (cron is 15 min); the last ~4 points cover ~1h.
+	// Returns null if we don't have at least two finite samples in that window.
+	function computeHourChange(series: number[] | undefined): number | null {
+		if (!series || series.length < 2) return null;
+		const tail = series.slice(Math.max(0, series.length - 4));
+		const finite = tail.filter((v) => Number.isFinite(v));
+		if (finite.length < 2) return null;
+		const first = finite[0];
+		const last = finite[finite.length - 1];
+		if (first === 0) return null;
+		return (last - first) / first;
+	}
+
 	// Setup columns/headers
 	const columns: Column<AssetKey>[] = [
 		{ width: 10, title: "", sortKey: null },
 		{ width: 6, title: "", sortKey: null },
 		{ width: null, title: "Asset", sortKey: null },
-		{ width: 20, title: "Volume", sortKey: "volume" },
-		{ width: 24, title: "24h", sortKey: "volumeChange" },
-		{ width: 20, title: "OI", sortKey: "oi" },
-		{ width: 24, title: "24h", sortKey: "oiChange" },
 		{ width: 26, title: "Price", sortKey: null },
+		{ width: 16, title: "1H", sortKey: null },
 		{ width: 20, title: "24h", sortKey: "medianRefPxChange" },
+		{ width: 22, title: "Volume", sortKey: "volume" },
+		{ width: 22, title: "OI", sortKey: "oi" },
 		{ width: 28, title: "Class", sortKey: "category" },
 		{ width: 22, title: "Chart", sortKey: null },
 		{ width: 25, title: "Venues", sortKey: null },
@@ -114,50 +127,52 @@
 					<div class="flex w-7 items-center justify-center">
 						<Icon src={icon} alt={name} />
 					</div>
-					<span class="ml-2 text-gecko-white">{name}</span>
-					<span class="ml-1 text-gecko-gray">{assetId.toUpperCase()}</span>
+					<span class="ml-2 font-medium text-gecko-white">{name}</span>
+					<span class="ml-1 font-mono text-[11px] text-gecko-gray/70">{assetId.toUpperCase()}</span>
 				</span>
 			</Table.Cell>
 
-			<!-- Volume -->
-			<Table.Cell class="w-20">
-				<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
-			</Table.Cell>
-
-			<!-- Volume change -->
-			<Table.Cell class="w-24">
-				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage />
-			</Table.Cell>
-
-			<!-- OI -->
-			<Table.Cell class="w-20">
-				<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
-			</Table.Cell>
-
-			<!-- OI change -->
-			<Table.Cell class="w-24">
-				<Numeric value={asset.oiChange * 100} format="numeric" change percentage />
-			</Table.Cell>
-
 			<!-- Ref price -->
-			<!-- Always prefer base quote currency -->
 			<Table.Cell class="w-26">
 				<Numeric
 					value={asset.medianRefPx}
 					format="numeric"
 					currency={quote ?? "USD"}
-					class="text-gecko-white"
+					class="font-medium text-gecko-white"
 				/>
 			</Table.Cell>
 
-			<!-- Mid price change -->
+			<!-- 1H change -->
+			{@const sp = sparklines[assetId]}
+			{@const hourChange = computeHourChange(sp)}
+			<Table.Cell class="w-16">
+				{#if hourChange === null}
+					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+				{:else}
+					<Numeric value={hourChange * 100} format="numeric" change percentage />
+				{/if}
+			</Table.Cell>
+
+			<!-- 24h price change -->
 			<Table.Cell class="w-20">
 				<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
 			</Table.Cell>
 
+			<!-- Volume -->
+			<Table.Cell class="w-22">
+				<Numeric value={asset.volume} format="currency" currency="USD" class="text-gecko-white" />
+				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage class="ml-1 text-[10px]" />
+			</Table.Cell>
+
+			<!-- OI -->
+			<Table.Cell class="w-22">
+				<Numeric value={asset.oi} format="currency" currency="USD" class="text-gecko-white" />
+				<Numeric value={asset.oiChange * 100} format="numeric" change percentage class="ml-1 text-[10px]" />
+			</Table.Cell>
+
 			<!-- Class -->
 			<Table.Cell class="w-28">
-				<span class="font-mono uppercase">{asset.category}</span>
+				<span class="font-mono text-[11px] uppercase tracking-wide text-gecko-gray/80">{asset.category}</span>
 			</Table.Cell>
 
 			<!-- Mini chart -->

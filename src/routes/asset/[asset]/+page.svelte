@@ -69,71 +69,162 @@
 
 <Meta {title} {schema} />
 
-<!-- Asset header (uniswap-inspired: identity, then large price + stats inline) -->
-<div>
-	<Grid bottom={false}>
-		<div class="flex flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:items-start md:gap-10">
-			<!-- Left: identity + description -->
+<!-- Breadcrumb -->
+<div class="border-b border-b-gecko-shade">
+	<div class="mx-auto flex max-w-7xl items-center gap-1.5 px-4 py-3 text-xs text-gecko-gray/70 lg:px-8">
+		<a href="/" class="hover:text-gecko-white">Markets</a>
+		<span class="text-gecko-gray/40">/</span>
+		<a
+			href="/?category={asset?.category ?? 'stocks'}"
+			class="capitalize hover:text-gecko-white"
+		>
+			{asset?.category ?? "Asset"}
+		</a>
+		<span class="text-gecko-gray/40">/</span>
+		<span class="font-mono uppercase text-gecko-white">{data.asset}</span>
+	</div>
+</div>
+
+<!-- Asset hero (uniswap-style: identity row, then big price, then range pills) -->
+<div class="border-b border-b-gecko-shade">
+	<div class="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 lg:px-8 lg:py-8">
+		<!-- Identity row -->
+		<div class="flex flex-row items-center gap-3">
+			<Icon
+				src={meta.icon}
+				alt={meta.name}
+				class="{meta.icon.length > 1
+					? 'size-10 md:size-12'
+					: ''} [&_img]:size-7 md:[&_img]:size-9"
+			/>
 			<div class="flex flex-1 flex-col">
-				<div class="flex flex-row items-center gap-3">
-					<Icon
-						src={meta.icon}
-						alt={meta.name}
-						class="{meta.icon.length > 1
-							? 'size-9.5 md:size-12'
-							: ''} [&_img]:size-7 md:[&_img]:size-8"
-					/>
-					<div class="flex flex-col">
-						<h1 class="text-xl text-gecko-white md:text-2xl">{meta.name}</h1>
-						<span class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/70">
-							{data.asset}{asset?.category ? ` · ${asset.category}` : ""}
-						</span>
-					</div>
+				<div class="flex items-center gap-2">
+					<h1 class="text-xl font-semibold text-gecko-white md:text-2xl">{meta.name}</h1>
+					<span class="font-mono text-xs text-gecko-gray/80">{data.asset.toUpperCase()}</span>
 				</div>
-				<p class="mt-4 max-w-2xl text-xs text-gecko-gray/75 md:text-sm">{meta.description}</p>
+				{#if asset?.category}
+					<span class="text-[11px] capitalize text-gecko-gray/70">{asset.category}</span>
+				{/if}
+			</div>
+		</div>
+
+		{#if hasData && asset}
+			<!-- Hero price + 24h change -->
+			<div class="flex flex-col gap-1">
+				<Numeric
+					value={asset.medianRefPx}
+					format="numeric"
+					currency={meta.quote ?? "USD"}
+					class="text-4xl font-medium tracking-tight text-gecko-white md:text-5xl"
+				/>
+				<div class="flex items-baseline gap-2 text-sm">
+					<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
+					<span class="text-xs text-gecko-gray/60">past 24 hours</span>
+				</div>
 			</div>
 
-			{#if hasData && asset}
-				<!-- Right: hero price + tiny stats grid -->
-				<div class="flex flex-col items-start md:min-w-[280px] md:items-end">
-					<div class="flex items-baseline gap-2">
-						<Numeric
-							value={asset.medianRefPx}
-							format="numeric"
-							currency={meta.quote ?? "USD"}
-							class="text-3xl text-gecko-white md:text-4xl"
-						/>
-					</div>
-					<div class="mt-1 flex items-baseline gap-2">
-						<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
-						<span class="text-xs text-gecko-gray/60">24h</span>
-					</div>
-
-					<div class="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-						<div class="flex flex-col md:items-end">
-							<span class="text-[10px] uppercase tracking-wide text-gecko-gray/60">Vol 24h</span>
-							<Numeric
-								value={asset.volume}
-								format="currency"
-								currency="USD"
-								class="text-gecko-white"
-							/>
-						</div>
-						<div class="flex flex-col md:items-end">
-							<span class="text-[10px] uppercase tracking-wide text-gecko-gray/60">OI</span>
-							<Numeric
-								value={asset.oi}
-								format="currency"
-								currency="USD"
-								class="text-gecko-white"
-							/>
-						</div>
-					</div>
+			<!-- Chart range pills (visual shell — sparkline column already shows trend) -->
+			<div class="flex items-center justify-between border-t border-t-gecko-shade pt-4">
+				<div class="flex items-center gap-1">
+					{#each ["1H", "1D", "1W", "1M", "1Y", "All"] as r}
+						<button
+							type="button"
+							class="rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide transition {r ===
+							'1D'
+								? 'border-gecko-gray bg-gecko-shade text-gecko-white'
+								: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
+						>
+							{r}
+						</button>
+					{/each}
 				</div>
-			{/if}
-		</div>
-	</Grid>
+				<div class="flex items-center gap-1">
+					<button
+						type="button"
+						class="rounded-full border border-gecko-gray bg-gecko-shade px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide text-gecko-white"
+					>
+						Price
+					</button>
+					<button
+						type="button"
+						class="rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide text-gecko-gray hover:text-gecko-white"
+					>
+						Volume
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if meta.description}
+			<p class="max-w-3xl text-xs text-gecko-gray/75 md:text-sm">{meta.description}</p>
+		{/if}
+	</div>
 </div>
+
+<!-- Stats grid (uniswap-style 6-cell row) -->
+{#if hasData && asset}
+	{@const venueCount = new Set(asset.marketIds.map((id) => snapshot.markets[id].venue)).size}
+	<div class="border-b border-b-gecko-shade">
+		<div class="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:grid-cols-3 lg:grid-cols-6 lg:px-8">
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Volume 24h
+				</span>
+				<Numeric
+					value={asset.volume}
+					format="currency"
+					currency="USD"
+					class="text-sm font-medium text-gecko-white"
+				/>
+				<Numeric value={asset.volumeChange * 100} format="numeric" change percentage />
+			</div>
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Open Interest
+				</span>
+				<Numeric
+					value={asset.oi}
+					format="currency"
+					currency="USD"
+					class="text-sm font-medium text-gecko-white"
+				/>
+				<Numeric value={asset.oiChange * 100} format="numeric" change percentage />
+			</div>
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Median price
+				</span>
+				<Numeric
+					value={asset.medianRefPx}
+					format="numeric"
+					currency={meta.quote ?? "USD"}
+					class="text-sm font-medium text-gecko-white"
+				/>
+				<Numeric value={asset.medianRefPxChange * 100} format="numeric" change percentage />
+			</div>
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Markets
+				</span>
+				<span class="text-sm font-medium text-gecko-white">{asset.marketIds.length}</span>
+				<span class="text-[10px] text-gecko-gray/60">across all venues</span>
+			</div>
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Venues
+				</span>
+				<span class="text-sm font-medium text-gecko-white">{venueCount}</span>
+				<span class="text-[10px] text-gecko-gray/60">unique exchanges</span>
+			</div>
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					Asset class
+				</span>
+				<span class="text-sm font-medium capitalize text-gecko-white">{asset.category}</span>
+			</div>
+		</div>
+	</div>
+{/if}
 
 {#if !hasData}
 	<div>

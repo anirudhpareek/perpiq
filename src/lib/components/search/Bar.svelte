@@ -68,7 +68,7 @@
 		open = true;
 	}}
 	aria-label="Search"
-	class="group flex h-8 w-8 cursor-pointer items-center justify-center gap-1 rounded-md border border-gecko-shade bg-gecko-black px-3 text-xs text-gecko-gray hover:border-gecko-gray/30 hover:bg-gecko-black-hover lg:w-56"
+	class="group flex h-9 w-9 cursor-pointer items-center justify-center gap-2 rounded-full border border-gecko-shade/80 bg-gecko-shade/30 px-3.5 text-sm text-gecko-gray transition hover:border-gecko-gray/40 hover:bg-gecko-shade/50 lg:h-10 lg:w-[420px]"
 >
 	<!-- Search icon -->
 	<svg
@@ -81,11 +81,11 @@
 		/></svg
 	>
 
-	<!-- Search text; pedantic but the `h-3.75` is slightly more visually-aligned -->
-	<span class="hidden h-3.75 flex-1 text-left opacity-50 lg:inline-flex">Search...</span>
+	<!-- Search text -->
+	<span class="hidden flex-1 text-left text-gecko-gray/80 lg:inline-flex">Search assets, venues, or markets</span>
 
 	<kbd
-		class="pointer-events-none hidden gap-[1.5px] rounded border border-gecko-shade px-1 font-mono text-xs text-gecko-gray/50 group-hover:border-gecko-muted lg:inline-flex"
+		class="pointer-events-none hidden gap-[1.5px] rounded border border-gecko-shade/80 px-1.5 font-mono text-[11px] text-gecko-gray/60 group-hover:border-gecko-gray/40 lg:inline-flex"
 	>
 		<span class="translate-y-[0.5px]">⌘</span>
 		<span>K</span>

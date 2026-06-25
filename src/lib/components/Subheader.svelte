@@ -4,77 +4,91 @@
 
 	let { class: extraClass }: { class?: string } = $props();
 
-	// Quick metrics helpers
 	const snapshot = $derived(page.data.snapshot);
 	const assets = $derived(Object.keys(snapshot.assets).length);
 	const markets = $derived(Object.keys(snapshot.markets).length);
+	const ven = $derived(snapshot.aggregates.oiByVenue.slice(0, 2));
+
+	type Stat = {
+		label: string;
+		value: number;
+		format: "number" | "currency";
+		change?: number;
+	};
+
+	const stats = $derived<Stat[]>([
+		{ label: "Assets", value: assets, format: "number" },
+		{ label: "Markets", value: markets, format: "number" },
+		{
+			label: "OI",
+			value: snapshot.aggregates.oi,
+			format: "currency",
+			change: snapshot.aggregates.oiChange * 100
+		},
+		{
+			label: "Volume 24h",
+			value: snapshot.aggregates.volume,
+			format: "currency",
+			change: snapshot.aggregates.volumeChange * 100
+		}
+	]);
+
+	function venueName(v: string) {
+		return v.at(0)?.toUpperCase() + v.slice(1);
+	}
 </script>
 
-<section
-	class="flex h-8 flex-row items-center justify-center border-b border-gecko-shade lg:h-11 {extraClass}"
->
+<section class="border-b border-gecko-shade {extraClass}">
 	<div
-		class="flex h-full w-full max-w-7xl items-center justify-between overflow-x-auto border-gecko-shade px-4 text-xs lg:border-x"
+		class="mx-auto flex max-w-7xl flex-wrap items-stretch gap-x-8 gap-y-3 px-4 py-3 text-xs lg:px-8 lg:py-4"
 	>
-		<!-- Statistics -->
-		<div class="flex min-w-3xl flex-row space-x-4">
-			<span>Assets: <Numeric value={assets} class="text-gecko-white" /></span>
-			<span>Markets: <Numeric value={markets} class="text-gecko-white" /></span>
-			<span
-				>OI: <Numeric
-					value={snapshot.aggregates.oi}
-					format="currency"
-					currency="USD"
-					class="text-gecko-white"
-				/><Numeric
-					value={snapshot.aggregates.oiChange * 100}
-					format="numeric"
-					class="ml-1"
-					change
-					percentage
-				/></span
-			>
-			<span
-				>Volume: <Numeric
-					value={snapshot.aggregates.volume}
-					format="currency"
-					currency="USD"
-					class="text-gecko-white"
-				/><Numeric
-					value={snapshot.aggregates.volumeChange * 100}
-					format="numeric"
-					class="ml-1"
-					change
-					percentage
-				/></span
-			>
+		{#each stats as s}
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					{s.label}
+				</span>
+				<div class="flex items-baseline gap-1.5">
+					<Numeric
+						value={s.value}
+						format={s.format === "currency" ? "currency" : "numeric"}
+						currency="USD"
+						class="text-sm font-medium text-gecko-white"
+					/>
+					{#if s.change !== undefined}
+						<Numeric value={s.change} format="numeric" change percentage />
+					{/if}
+				</div>
+			</div>
+		{/each}
 
-			<!-- @dev: Requires at least two distinct venues -->
-			<span
-				>OI Dominance: <span class="ml-1 inline-flex gap-2"
-					>{#each snapshot.aggregates.oiByVenue.slice(0, 2) as { venue, oiShare }}
-						<!-- Tad ugly but proper capitalization -->
-						<span class="text-gecko-white"
-							>{venue.at(0)?.toUpperCase() + venue.slice(1)}
+		{#if ven.length > 0}
+			<div class="flex flex-col gap-0.5">
+				<span class="text-[10px] font-medium uppercase tracking-wide text-gecko-gray/70">
+					OI Dominance
+				</span>
+				<div class="flex items-baseline gap-2 text-sm">
+					{#each ven as { venue, oiShare }}
+						<span class="font-medium text-gecko-white">
+							{venueName(venue)}
 							<Numeric
 								value={oiShare * 100}
 								format="numeric"
 								percentage
-								class="text-gecko-gray!"
-							/></span
-						>
-					{/each}</span
-				></span
-			>
-		</div>
+								class="ml-0.5 text-gecko-gray!"
+							/>
+						</span>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
-		<!-- Source -->
-		<div class="hidden lg:inline">
+		<div class="ml-auto hidden self-center lg:block">
 			<a
-				href="https://github.com/anish-agnihotri/stockgecko.com"
+				href="https://github.com/anirudhpareek/perpiq"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="font-mono uppercase hover:text-gecko-white">View source on github</a
+				class="font-mono text-[10px] uppercase tracking-wide text-gecko-gray/60 hover:text-gecko-white"
+				>View on GitHub →</a
 			>
 		</div>
 	</div>
