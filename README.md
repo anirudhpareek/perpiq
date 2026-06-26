@@ -1,5 +1,3 @@
-![prepiq landing image](https://github.com/user-attachments/assets/10234bb9-c50e-4831-b6d1-905b4b6dfbe6)
-
 <p align="center">prepiq aggregates <b>270+ markets</b> across <b>85+ assets</b> and <b>12+ venues</b>—covering stocks, indices, commodities, FX, and pre-IPO perps.</p>
 
 ## Setup & Usage
@@ -132,13 +130,13 @@ All of the market data collection in this project (effectively, the indexing or 
 
 This is used to implement collection across: [Aster](./src/workflows/collection/aster.ts), [Binance](./src/workflows/collection/binance.ts), [edgeX](./src/workflows/collection/edgex.ts), [Extended](./src/workflows/collection/extended.ts), [Hyperliquid](./src/workflows/collection/hyperliquid.ts) (including: Trade[XYZ], Felix, DreamCash, Ventuals, Kinetiq Markets), [Lighter](./src/workflows/collection/lighter.ts), [Ostium](./src/workflows/collection/ostium.ts), [QFEX](./src/workflows/collection/qfex.ts), and [Vest](./src/workflows/collection/vest.ts).
 
-This data is used to statically regenerate the site at an hourly cadence, with a transformed [`DiffedSnapshot`](./src/lib/load.ts) injected into the root SvelteKit layout (note: [_slightly_ better performance when benchmarked](https://github.com/Anish-Agnihotri/stockgecko.com/tree/aa/bench-min-layout-load) than splitting the payload across routes, in an attempt to reduce `__data.json` size, and more consistent than an [ISR via Vercel Edge Config](https://github.com/Anish-Agnihotri/stockgecko.com/commit/839e56b8e263d7dbbc3f4675d089a322b09d38da) approach, given statistical pages).
+This data is used to statically regenerate the site at an hourly cadence, with a transformed [`DiffedSnapshot`](./src/lib/load.ts) injected into the root SvelteKit layout. This keeps route payloads consistent for statistical pages while avoiding unnecessary per-route data splitting.
 
 ### Geoblock proxy
 
 Binance Futures API geo-blocks even `GET` requests (dev note: I know).
 
-There's a generic, but authenticated (to prevent malicious local cache access), proxy endpoint at `/api/proxy` ([impl](https://github.com/Anish-Agnihotri/stockgecko.com/commit/db3a60193f99608ecc053fa1e6a143f4655898a7)) that proxies through `lhr1`, London.
+There's a generic, but authenticated (to prevent malicious local cache access), proxy endpoint at `/api/proxy` that proxies through `lhr1`, London.
 
 ### Comodo AAA CA
 
@@ -148,7 +146,7 @@ We load the [certificate](./src/lib/certs/comodo-aaa.pem) explicitly to override
 
 ### Font subsetting
 
-To minimize font size and RTT, we have extracted weights `300`-`500` from Inter Variable via [`source-foundry/Slice`](http://github.com/source-foundry/Slice), then hard subset via [`TupiC/glypher`](https://github.com/TupiC/glypher), and return as an immutable, single cached file from same origin as site ([commit](https://github.com/Anish-Agnihotri/stockgecko.com/commit/2d26d5263150e4c1d3e88322aedd2bd4befc565a)).
+To minimize font size and RTT, we have extracted weights `300`-`500` from Inter Variable via [`source-foundry/Slice`](http://github.com/source-foundry/Slice), then hard subset via [`TupiC/glypher`](https://github.com/TupiC/glypher), and return as an immutable, single cached file from same origin as site.
 
 ### GDR normalization
 
@@ -156,11 +154,11 @@ Surprisingly, most markets across venues are either entirely de-duplicated (easy
 
 But, Korean equity markets across Trade[XYZ] and Lighter are the first (and probably not last) exception where Trade[XYZ] uses the USD-denominated Global Depository Receipt (GDR) markets and Lighter uses the KRW-denominated KRX markets.
 
-In these cases, we choose not to medianize ([commit](https://github.com/Anish-Agnihotri/stockgecko.com/commit/5c43278f65408d894faf6cd8087106b96fcb9ba2)) and visually prefer the source currency, but still surface both markets, with their individual currency denominations, as a single asset entity.
+In these cases, we choose not to medianize and visually prefer the source currency, but still surface both markets, with their individual currency denominations, as a single asset entity.
 
 ---
 
-Many other quirks exist across the codebase. Feel free to reference `@dev:` notes-to-self or [commit log](https://github.com/Anish-Agnihotri/stockgecko.com/commits/main/).
+Many other quirks exist across the codebase. Feel free to reference `@dev:` notes-to-self while navigating implementation details.
 
 ## License
 
