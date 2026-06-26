@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { Check, ChevronDown, Search } from "@lucide/svelte";
 	import Icon from "$components/Icon.svelte";
 	import exchanges from "$config/exchanges.json";
@@ -23,6 +24,7 @@
 
 	let open = $state(false);
 	let query = $state("");
+	let rootEl: HTMLDivElement;
 
 	const exchangeCfg = exchanges as ExchangeCfg;
 
@@ -73,15 +75,35 @@
 		query = "";
 		open = false;
 	}
+
+	onMount(() => {
+		function handlePointerDown(event: PointerEvent) {
+			if (!rootEl?.contains(event.target as Node)) open = false;
+		}
+
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key === "Escape") open = false;
+		}
+
+		document.addEventListener("pointerdown", handlePointerDown);
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("pointerdown", handlePointerDown);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	});
 </script>
 
-<div class="relative shrink-0">
+<div class="relative shrink-0" bind:this={rootEl}>
 	<button
 		type="button"
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		onclick={() => (open = !open)}
-		class="press inline-flex h-9 items-center gap-2 rounded-md border border-gecko-shade/90 bg-gecko-shade/25 px-2.5 text-left text-xs text-gecko-white transition-colors duration-150 ease-out hover:border-gecko-gray/45 hover:bg-gecko-shade/45"
+		class="press inline-flex h-9 items-center gap-2 rounded-md border px-2.5 text-left text-xs text-gecko-white transition-colors duration-150 ease-out hover:border-gecko-gray/45 hover:bg-gecko-shade/45 {open
+			? 'border-gecko-gray/45 bg-gecko-shade/45'
+			: 'border-gecko-shade/90 bg-gecko-shade/25'}"
 		title={value === "all"
 			? "Showing assets across all tracked venues"
 			: `Showing assets listed on ${selected?.label ?? value}`}
@@ -110,7 +132,7 @@
 
 	{#if open}
 		<div
-			class="absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gecko-shade bg-[#101014] p-2 shadow-2xl shadow-black/40"
+			class="venue-popover absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gecko-shade bg-[#101014] p-2 shadow-2xl shadow-black/40"
 		>
 			<label
 				class="flex h-10 items-center gap-2 rounded-md bg-gecko-shade/55 px-3 text-sm text-gecko-gray focus-within:text-gecko-white"
@@ -129,7 +151,10 @@
 					role="option"
 					aria-selected={value === "all"}
 					onclick={() => selectVenue("all")}
-					class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out hover:bg-gecko-shade/50"
+					class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out {value ===
+					'all'
+						? 'bg-gecko-shade/70'
+						: 'hover:bg-gecko-shade/50'}"
 				>
 					<div class="grid size-7 shrink-0 grid-cols-2 gap-0.5" aria-hidden="true">
 						{#each venues.slice(0, 4) as venue (venue.id)}
@@ -145,7 +170,7 @@
 						</div>
 					</div>
 					{#if value === "all"}
-						<Check size={16} strokeWidth={2} class="text-gecko-white" aria-hidden="true" />
+						<Check size={16} strokeWidth={2} class="text-gecko-white/90" aria-hidden="true" />
 					{/if}
 				</button>
 
@@ -155,7 +180,10 @@
 						role="option"
 						aria-selected={value === venue.id}
 						onclick={() => selectVenue(venue.id)}
-						class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out hover:bg-gecko-shade/50"
+						class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out {value ===
+						venue.id
+							? 'bg-gecko-shade/70'
+							: 'hover:bg-gecko-shade/50'}"
 					>
 						<div class="flex size-7 shrink-0 items-center justify-center">
 							<Icon src={venue.icon} alt={venue.label} nested />
@@ -167,7 +195,7 @@
 							</div>
 						</div>
 						{#if value === venue.id}
-							<Check size={16} strokeWidth={2} class="text-gecko-white" aria-hidden="true" />
+							<Check size={16} strokeWidth={2} class="text-gecko-white/90" aria-hidden="true" />
 						{/if}
 					</button>
 				{/each}
@@ -179,3 +207,17 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	.venue-popover {
+		transform-origin: top right;
+		transition:
+			opacity 140ms var(--ease-tactile),
+			transform 140ms var(--ease-tactile);
+
+		@starting-style {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.98);
+		}
+	}
+</style>
