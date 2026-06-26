@@ -9,14 +9,17 @@
 	import type { EChartsOption } from "echarts";
 	import exchanges from "$config/exchanges.json";
 	import LazyChart from "$components/LazyChart.svelte";
+	import VenueFilter from "$components/VenueFilter.svelte";
 	import MarketTable from "$components/table/MarketTable.svelte";
+	import { truncateCurrency } from "$lib/number-format";
 	import { MARKET_TO_ASSET, type DiffedSnapshot } from "$lib/transform";
 	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
-	import Numeric, { truncateCurrency } from "$components/Numeric.svelte";
+	import Numeric from "$components/Numeric.svelte";
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot as DiffedSnapshot);
 	let category = $state<Category>("all");
+	let venue = $state("all");
 
 	// Stats
 	const venueCount = $derived(snapshot.aggregates.exchangeStats.length);
@@ -157,7 +160,9 @@
 </Grid>
 
 <!-- Table of all markets -->
-<CategoryPills bind:value={category} />
+<CategoryPills bind:value={category}>
+	<VenueFilter {snapshot} bind:value={venue} />
+</CategoryPills>
 <div class="md:border-t md:border-t-gecko-shade">
-	<MarketTable {snapshot} filter={{ category }} />
+	<MarketTable {snapshot} filter={{ category, ...(venue !== "all" ? { venue } : {}) }} />
 </div>

@@ -1,7 +1,7 @@
 import type { Meta } from "$lib/types";
 import tickers from "$config/tickers.json";
 import type { PlainMarketEntry } from "$lib/serialize";
-import { getNormalizedCurrency } from "$components/Numeric.svelte";
+import { getNormalizedCurrency } from "$lib/number-format";
 
 // Reverse index (marketKey => {asset, category})
 // "hyperliquid:xyz:NVDA" → { asset: "nvda", name: "Nvidia", category: "stocks", quote: "KRW", venueQuote: "USD" }

@@ -21,10 +21,12 @@
 	let {
 		snapshot,
 		category = "all",
+		venue = "all",
 		sparklines = {}
 	}: {
 		snapshot: DiffedSnapshot;
 		category?: string;
+		venue?: string;
 		sparklines?: Record<string, number[]>;
 	} = $props();
 
@@ -35,11 +37,20 @@
 	// Filter by category before sorting
 	const filtered = $derived(
 		snapshot.index.assetsByVolume.filter((r) => {
-			if (category === "all") return true;
-			if (category === "new" || category === "divergences") {
-				return assetMatchesSignalFilter(snapshot, r.asset, category);
-			}
-			return snapshot.assets[r.asset]?.category === category;
+			const asset = snapshot.assets[r.asset];
+			if (!asset) return false;
+
+			const matchesCategory =
+				category === "all"
+					? true
+					: category === "new" || category === "divergences"
+						? assetMatchesSignalFilter(snapshot, r.asset, category)
+						: asset.category === category;
+
+			if (!matchesCategory) return false;
+			if (venue === "all") return true;
+
+			return asset.marketIds.some((marketId) => snapshot.markets[marketId]?.venue === venue);
 		})
 	);
 

@@ -13,20 +13,20 @@
 <header
 	class="sticky top-0 z-30 order-2 flex h-14 flex-row items-center justify-center border-b border-b-gecko-shade lg:h-16 {extraClass} bg-black/80 backdrop-blur"
 >
-	<div class="flex h-full w-full max-w-7xl items-center gap-4 px-4 lg:px-8">
+	<div class="flex h-full w-full max-w-7xl items-center gap-4">
 		<!-- Logo (left) -->
 		<a href="/" class="shrink-0">
 			<img
 				src="/assets/brand/logo.svg"
 				alt="prepiq logo"
-				class="hidden lg:inline"
+				class="no-outline hidden lg:inline"
 				height="32px"
 				width="160px"
 			/>
 			<img
 				src="/assets/brand/logo.svg"
 				alt="prepiq logo"
-				class="lg:hidden"
+				class="no-outline lg:hidden"
 				height="24px"
 				width="120px"
 			/>
@@ -51,12 +51,9 @@
 			</ul>
 		</nav>
 
-		<!-- Search (center-ish, takes remaining space) -->
-		<div class="flex flex-1 justify-end lg:justify-center">
+		<!-- Search -->
+		<div class="ml-auto flex shrink-0 justify-end">
 			<SearchBar />
 		</div>
-
-		<!-- Right rail placeholder for symmetry on desktop -->
-		<div class="hidden w-[160px] shrink-0 lg:block"></div>
 	</div>
 </header>

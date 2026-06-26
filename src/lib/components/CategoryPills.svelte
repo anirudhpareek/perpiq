@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from "svelte";
 	import {
 		Activity,
 		BadgeDollarSign,
@@ -20,7 +21,13 @@
 		| "new"
 		| "divergences";
 
-	let { value = $bindable("all") }: { value: Category } = $props();
+	let {
+		value = $bindable("all"),
+		children
+	}: {
+		value: Category;
+		children?: Snippet;
+	} = $props();
 
 	const opts: { id: Category; label: string; icon: typeof Activity }[] = [
 		{ id: "all", label: "All", icon: Activity },
@@ -35,25 +42,33 @@
 </script>
 
 <div
-	class="flex flex-wrap items-center gap-1.5 border-b border-b-gecko-shade bg-gecko-black px-4 py-3 md:px-8"
+	class="flex flex-wrap items-center gap-2 border-b border-b-gecko-shade bg-gecko-black px-4 py-3 md:px-8"
 >
-	{#each opts as opt (opt.id)}
-		{@const FilterIcon = opt.icon}
-		<button
-			type="button"
-			onclick={() => (value = opt.id)}
-			class="press inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {value ===
-			opt.id
-				? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-				: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
-		>
-			<FilterIcon
-				size={13}
-				strokeWidth={1.9}
-				class={value === opt.id ? "text-gecko-white" : "text-gecko-gray/65"}
-				aria-hidden="true"
-			/>
-			{opt.label}
-		</button>
-	{/each}
+	<div class="flex min-w-0 flex-wrap items-center gap-1.5">
+		{#each opts as opt (opt.id)}
+			{@const FilterIcon = opt.icon}
+			<button
+				type="button"
+				onclick={() => (value = opt.id)}
+				class="press inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {value ===
+				opt.id
+					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
+					: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
+			>
+				<FilterIcon
+					size={13}
+					strokeWidth={1.9}
+					class={value === opt.id ? "text-gecko-white" : "text-gecko-gray/65"}
+					aria-hidden="true"
+				/>
+				{opt.label}
+			</button>
+		{/each}
+	</div>
+
+	{#if children}
+		<div class="ml-auto flex min-w-fit items-center">
+			{@render children()}
+		</div>
+	{/if}
 </div>

@@ -129,7 +129,7 @@
 						symbol: "circle",
 						symbolSize: 8,
 						itemStyle: { color: stroke, borderColor: "oklch(0.165 0.013 270)", borderWidth: 2 },
-						data: [{ coord: [lastIdx, vals[lastIdx]] }]
+						data: [{ name: "Latest", coord: [lastIdx, vals[lastIdx]] }]
 					}
 				}
 			],
@@ -173,9 +173,7 @@
 		{#if hasPoints}
 			<LazyChart options={opts} />
 		{:else}
-			<div
-				class="flex h-full w-full items-center justify-center text-xs text-gecko-gray/60"
-			>
+			<div class="flex h-full w-full items-center justify-center text-xs text-gecko-gray/60">
 				Building price history… (need more batches)
 			</div>
 		{/if}
@@ -189,7 +187,7 @@
 					type="button"
 					onclick={() => (range = r)}
 					disabled={rangeUnavailable(r)}
-					class="press rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-40 {range ===
+					class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-40 {range ===
 					r
 						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 						: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
@@ -202,7 +200,7 @@
 			<button
 				type="button"
 				onclick={() => (mode = "price")}
-				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide {mode ===
+				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase {mode ===
 				'price'
 					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 					: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
@@ -212,7 +210,7 @@
 			<button
 				type="button"
 				onclick={() => (mode = "volume")}
-				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide {mode ===
+				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase {mode ===
 				'volume'
 					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
 					: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
@@ -228,10 +226,7 @@
 	   Uses CSS only — keeps the chart vector-clean and works regardless of
 	   echarts renderer choice. */
 	.chart-shell {
-		background-image: radial-gradient(
-			oklch(0.78 0.005 270 / 0.18) 1px,
-			transparent 1px
-		);
+		background-image: radial-gradient(oklch(0.78 0.005 270 / 0.18) 1px, transparent 1px);
 		background-size: 16px 16px;
 		background-position: 0 0;
 	}

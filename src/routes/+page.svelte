@@ -5,6 +5,7 @@
 	import DitherHero from "$components/DitherHero.svelte";
 	import AssetTable from "$components/table/AssetTable.svelte";
 	import FeaturedMovers from "$components/FeaturedMovers.svelte";
+	import VenueFilter from "$components/VenueFilter.svelte";
 	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
 	import HomepageIntelligence from "$components/intelligence/HomepageIntelligence.svelte";
 
@@ -13,6 +14,7 @@
 	const sparklines = $derived(data.sparklines ?? {});
 
 	let category = $state<Category>("all");
+	let venue = $state("all");
 </script>
 
 <Meta />
@@ -45,10 +47,12 @@
 <!-- Market signals -->
 <HomepageIntelligence {snapshot} {sparklines} />
 
-<!-- Category filter -->
-<CategoryPills bind:value={category} />
+<!-- Category + venue filters -->
+<CategoryPills bind:value={category}>
+	<VenueFilter {snapshot} bind:value={venue} />
+</CategoryPills>
 
 <!-- Tabular data -->
 <section class="flex max-w-full flex-1 flex-row justify-center">
-	<AssetTable {snapshot} {category} {sparklines} />
+	<AssetTable {snapshot} {category} {venue} {sparklines} />
 </section>

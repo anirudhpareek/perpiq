@@ -14,14 +14,14 @@
 					<img
 						src="/assets/brand/logo.svg"
 						alt="prepiq logo"
-						class="hidden lg:inline"
+						class="no-outline hidden lg:inline"
 						height="40px"
 						width="200px"
 					/>
 					<img
 						src="/assets/brand/logo.svg"
 						alt="prepiq logo"
-						class="lg:hidden"
+						class="no-outline lg:hidden"
 						height="24px"
 						width="120px"
 					/>
