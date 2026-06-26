@@ -162,4 +162,6 @@ Many other quirks exist across the codebase. Feel free to reference `@dev:` note
 
 ## License
 
+Credits: Perpiq builds on ideas and foundations from [StockGecko](https://github.com/Anish-Agnihotri/stockgecko.com) by [Anish Agnihotri](https://github.com/Anish-Agnihotri).
+
 [GNU Affero GPL v3.0](./LICENSE)
