@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { goto } from "$app/navigation";
+	import { untrack } from "svelte";
 	import type { PageProps } from "../$types";
 	import tickers from "$config/tickers.json";
 	import Meta from "$components/Meta.svelte";
@@ -27,8 +28,8 @@
 	$effect(() => {
 		const nextCategory = parseCategory(page.url.searchParams.get("category"));
 		const nextVenue = parseVenue(page.url.searchParams.get("venue"));
-		if (category !== nextCategory) category = nextCategory;
-		if (venue !== nextVenue) venue = nextVenue;
+		if (untrack(() => category) !== nextCategory) category = nextCategory;
+		if (untrack(() => venue) !== nextVenue) venue = nextVenue;
 	});
 
 	$effect(() => {
