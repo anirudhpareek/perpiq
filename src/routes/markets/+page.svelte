@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 	import type { PageProps } from "../$types";
 	import tickers from "$config/tickers.json";
 	import Meta from "$components/Meta.svelte";
@@ -11,6 +13,7 @@
 	import LazyChart from "$components/LazyChart.svelte";
 	import VenueFilter from "$components/VenueFilter.svelte";
 	import MarketTable from "$components/table/MarketTable.svelte";
+	import { parseCategory, parseVenue, updateFilterParams } from "$lib/filter-url";
 	import { truncateCurrency } from "$lib/number-format";
 	import { MARKET_TO_ASSET, type DiffedSnapshot } from "$lib/transform";
 	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
@@ -18,8 +21,21 @@
 
 	let { data }: PageProps = $props();
 	const snapshot = $derived(data.snapshot as DiffedSnapshot);
-	let category = $state<Category>("all");
-	let venue = $state("all");
+	let category = $state<Category>(parseCategory(page.url.searchParams.get("category")));
+	let venue = $state(parseVenue(page.url.searchParams.get("venue")));
+
+	$effect(() => {
+		const nextCategory = parseCategory(page.url.searchParams.get("category"));
+		const nextVenue = parseVenue(page.url.searchParams.get("venue"));
+		if (category !== nextCategory) category = nextCategory;
+		if (venue !== nextVenue) venue = nextVenue;
+	});
+
+	$effect(() => {
+		const next = updateFilterParams(page.url, { category, venue });
+		const current = `${page.url.pathname}${page.url.search}${page.url.hash}`;
+		if (next !== current) goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+	});
 
 	// Stats
 	const venueCount = $derived(snapshot.aggregates.exchangeStats.length);

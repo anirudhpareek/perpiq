@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 	import type { PageProps } from "./$types";
 	import Meta from "$components/Meta.svelte";
 	import Numeric from "$components/Numeric.svelte";
@@ -6,6 +8,7 @@
 	import AssetTable from "$components/table/AssetTable.svelte";
 	import FeaturedMovers from "$components/FeaturedMovers.svelte";
 	import VenueFilter from "$components/VenueFilter.svelte";
+	import { parseCategory, parseVenue, updateFilterParams } from "$lib/filter-url";
 	import CategoryPills, { type Category } from "$components/CategoryPills.svelte";
 	import HomepageIntelligence from "$components/intelligence/HomepageIntelligence.svelte";
 
@@ -13,8 +16,21 @@
 	const snapshot = $derived(data.snapshot);
 	const sparklines = $derived(data.sparklines ?? {});
 
-	let category = $state<Category>("all");
-	let venue = $state("all");
+	let category = $state<Category>(parseCategory(page.url.searchParams.get("category")));
+	let venue = $state(parseVenue(page.url.searchParams.get("venue")));
+
+	$effect(() => {
+		const nextCategory = parseCategory(page.url.searchParams.get("category"));
+		const nextVenue = parseVenue(page.url.searchParams.get("venue"));
+		if (category !== nextCategory) category = nextCategory;
+		if (venue !== nextVenue) venue = nextVenue;
+	});
+
+	$effect(() => {
+		const next = updateFilterParams(page.url, { category, venue });
+		const current = `${page.url.pathname}${page.url.search}${page.url.hash}`;
+		if (next !== current) goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+	});
 </script>
 
 <Meta />
