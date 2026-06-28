@@ -8,11 +8,9 @@
 	}: { class?: string; title: string; children: Snippet } = $props();
 </script>
 
-<div class="flex flex-1 flex-col {extraClass}">
+<div class="terminal-panel flex flex-1 flex-col overflow-hidden {extraClass}">
 	<!-- Card header -->
-	<div
-		class="asset-surface-header flex h-10 items-center border-b border-b-gecko-shade px-4 text-sm font-medium text-gecko-white"
-	>
+	<div class="terminal-header flex h-10 items-center px-4 text-sm font-medium text-gecko-white">
 		<h3>{title}</h3>
 	</div>
 

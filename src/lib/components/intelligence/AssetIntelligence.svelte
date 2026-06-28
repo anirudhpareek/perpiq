@@ -35,7 +35,7 @@
 {#if intel}
 	<!-- Market context header (summary + signals) -->
 	<div class="flex flex-col gap-5">
-		<Card title="Market context" class="asset-surface overflow-hidden">
+		<Card title="Market context">
 			<div class="flex flex-1 flex-col gap-3 p-4">
 				<p class="text-sm leading-6 text-gecko-gray/90">
 					{intel.summary}
@@ -53,7 +53,7 @@
 
 		<!-- Venue concentration + price range -->
 		<div class="grid gap-5 xl:grid-cols-2">
-			<Card title="Venue concentration" class="asset-surface overflow-hidden">
+			<Card title="Venue concentration">
 				<div class="flex flex-1 flex-col p-4">
 					<!-- Concentration meta -->
 					<div class="flex items-center justify-between pb-3 text-sm">
@@ -161,7 +161,7 @@
 				</div>
 			</Card>
 
-			<Card title="Venue price range" class="asset-surface overflow-hidden">
+			<Card title="Venue price range">
 				<div class="flex flex-1 flex-col p-4">
 					{#if intel.priceDivergence}
 						{@const d = intel.priceDivergence}

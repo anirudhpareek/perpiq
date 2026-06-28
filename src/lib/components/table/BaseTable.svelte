@@ -4,6 +4,7 @@
 	import { browser } from "$app/environment";
 	import type { Column } from "$components/table/table.svelte";
 	import { createWindowVirtualizer } from "@tanstack/svelte-virtual";
+	import { ArrowLeftRight } from "@lucide/svelte";
 
 	// Collect data table properties
 	type Props = {
@@ -73,17 +74,19 @@
 <div class="flex w-full flex-col {showBorder ? 'border-b border-b-gecko-shade ' : ''}">
 	<!-- Scrollable handler on mobile (defaults to `lg` breakpoint) -->
 	<div
-		class="flex items-center justify-end border-b border-b-gecko-shade bg-gecko-black px-2 py-1 font-mono text-xs text-gecko-gray/75 uppercase lg:hidden"
+		class="terminal-header flex items-center justify-end gap-1.5 px-3 py-2 font-mono text-[11px] text-gecko-gray/75 uppercase lg:hidden"
 	>
 		<span>Scrollable</span>
-		<span class="ml-1 -translate-y-px text-lg">↔</span>
+		<ArrowLeftRight size={13} strokeWidth={1.8} aria-hidden="true" />
 	</div>
 
 	<!-- Render table (responsive to min width) -->
 	<Table.Root class="w-full table-fixed" style="min-width:{minWidth}px;">
 		<!-- Table header a la columns -->
-		<Table.Header class="bg-gecko-black">
-			<Table.Row class="border-b-gecko-shade text-sm font-medium text-gecko-gray/85 [&_th]:px-0">
+		<Table.Header class="terminal-header">
+			<Table.Row
+				class="border-b-gecko-shade font-mono text-[11px] tracking-wide text-gecko-gray/70 uppercase [&_th]:px-0"
+			>
 				{#each columns as { width, title, sortKey: key }}
 					<Table.Head
 						class="{width ? `w-${width}` : ''}{key ? ' cursor-pointer select-none' : ''}"

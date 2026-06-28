@@ -12,7 +12,7 @@
 </script>
 
 <header
-	class="sticky top-0 z-30 order-2 flex h-14 flex-row items-center justify-center border-b border-b-gecko-shade lg:h-16 {extraClass} bg-black/80 backdrop-blur"
+	class="sticky top-0 z-30 order-2 flex h-14 flex-row items-center justify-center border-b border-b-gecko-shade bg-gecko-black/88 backdrop-blur lg:h-16 {extraClass}"
 >
 	<div class="flex h-full w-full max-w-7xl items-center gap-4">
 		<!-- Logo (left) -->
@@ -41,9 +41,9 @@
 					<li>
 						<a
 							href={path}
-							class="rounded-full px-3 py-1.5 transition {isActive
-								? 'bg-gecko-shade/60 text-gecko-white'
-								: 'text-gecko-gray hover:bg-gecko-shade/30'}"
+							class="terminal-button inline-flex h-8 items-center px-3 {isActive
+								? 'terminal-button-primary'
+								: 'text-gecko-gray'}"
 						>
 							{title}
 						</a>

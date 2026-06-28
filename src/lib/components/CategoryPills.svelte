@@ -42,7 +42,7 @@
 </script>
 
 <div
-	class="flex flex-wrap items-center gap-2 border-b border-b-gecko-shade bg-gecko-black px-4 py-3 md:px-8"
+	class="flex flex-wrap items-center gap-2 border-b border-b-gecko-shade bg-gecko-black/70 px-4 py-3 md:px-8"
 >
 	<div class="flex min-w-0 flex-wrap items-center gap-1.5">
 		{#each opts as opt (opt.id)}
@@ -50,10 +50,10 @@
 			<button
 				type="button"
 				onclick={() => (value = opt.id)}
-				class="press inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide uppercase {value ===
+				class="terminal-button inline-flex h-8 items-center gap-1.5 px-3 font-mono text-[11px] tracking-wide uppercase {value ===
 				opt.id
-					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-					: 'border-gecko-shade/80 bg-transparent text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
+					? 'terminal-button-primary'
+					: 'text-gecko-gray hover:text-gecko-white'}"
 			>
 				<FilterIcon
 					size={13}

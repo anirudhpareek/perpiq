@@ -67,11 +67,11 @@
 
 	// Unified styling
 	const groupClass =
-		"p-0 **:data-command-group-heading:border-b **:data-command-group-heading:border-b-gecko-shade **:data-command-group-heading:bg-gecko-black **:data-command-group-heading:px-3";
+		"p-0 **:data-command-group-heading:border-b **:data-command-group-heading:border-b-gecko-shade **:data-command-group-heading:bg-gecko-black/70 **:data-command-group-heading:px-3 **:data-command-group-heading:font-mono **:data-command-group-heading:text-[10px] **:data-command-group-heading:tracking-wide";
 	const itemClass =
-		"flex h-10 cursor-pointer flex-row justify-between rounded-none border-b border-b-gecko-shade px-3 text-xs font-light aria-selected:bg-gecko-black-hover";
+		"flex h-11 cursor-pointer flex-row justify-between rounded-none border-b border-b-gecko-shade px-3 text-xs font-light aria-selected:bg-gecko-black-hover aria-selected:text-gecko-white";
 	const chipClass =
-		"press inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 font-mono text-[10px] tracking-wide uppercase";
+		"terminal-button inline-flex h-7 shrink-0 items-center gap-1.5 px-2.5 font-mono text-[10px] tracking-wide uppercase";
 
 	const scopeOpts: { id: Scope; label: string; icon: typeof Activity }[] = [
 		{ id: "all", label: "All", icon: Activity },
@@ -142,12 +142,12 @@
 </script>
 
 <Command.Root
-	class="flex flex-col rounded-none **:data-[slot=command-input-wrapper]:h-10 **:data-[slot=command-input-wrapper]:border-gecko-shade [&_svg:first-child]:hidden"
+	class="flex flex-col rounded-none bg-transparent **:data-[slot=command-input-wrapper]:h-11 **:data-[slot=command-input-wrapper]:border-gecko-shade **:data-[slot=command-input-wrapper]:bg-gecko-black/60 [&_svg:first-child]:hidden"
 >
 	<!-- Input field -->
 	<Command.Input placeholder="Search assets, categories, venues..." ref={inputEl} autofocus />
 
-	<div class="border-b border-b-gecko-shade bg-gecko-black px-3 py-2">
+	<div class="terminal-header px-3 py-2">
 		<div class="flex gap-1.5 overflow-x-auto pb-1">
 			{#each scopeOpts as opt (opt.id)}
 				{@const FilterIcon = opt.icon}
@@ -156,8 +156,8 @@
 					onmousedown={(event) => event.preventDefault()}
 					onclick={() => setScope(opt.id)}
 					class="{chipClass} {scope === opt.id
-						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-						: 'border-gecko-shade/80 bg-gecko-shade/20 text-gecko-gray hover:border-gecko-gray/40 hover:text-gecko-white'}"
+						? 'terminal-button-primary'
+						: 'text-gecko-gray hover:text-gecko-white'}"
 				>
 					<FilterIcon size={12} strokeWidth={1.9} aria-hidden="true" />
 					{opt.label}
@@ -172,8 +172,8 @@
 					onmousedown={(event) => event.preventDefault()}
 					onclick={() => setCategory(opt.id)}
 					class="{chipClass} {category === opt.id
-						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-						: 'border-gecko-shade/70 bg-transparent text-gecko-gray/70 hover:border-gecko-gray/35 hover:text-gecko-white'}"
+						? 'terminal-button-primary'
+						: 'text-gecko-gray/70 hover:text-gecko-white'}"
 				>
 					<FilterIcon size={12} strokeWidth={1.9} aria-hidden="true" />
 					{opt.label}

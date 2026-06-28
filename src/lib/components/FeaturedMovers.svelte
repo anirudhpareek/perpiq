@@ -172,7 +172,7 @@
 								preloadData(`/asset/${id}`);
 							}}
 							onclick={() => goto(`/asset/${id}`)}
-							class="group press flex flex-col rounded-2xl border border-gecko-shade/80 bg-gecko-shade/20 p-4 text-left hover:border-gecko-gray/40 hover:bg-gecko-shade/40"
+							class="terminal-panel group flex min-h-[168px] flex-col p-4 text-left transition-[box-shadow,background-color] duration-150 hover:bg-gecko-shade/25"
 							style="animation: feat-in 480ms var(--ease-tactile) backwards; animation-delay: {cards.findIndex(
 								(c) => c.id === id
 							) *
@@ -257,6 +257,12 @@
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		button {
+			animation: none !important;
 		}
 	}
 </style>

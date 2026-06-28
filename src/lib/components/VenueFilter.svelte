@@ -101,9 +101,9 @@
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		onclick={() => (open = !open)}
-		class="press inline-flex h-9 items-center gap-2 rounded-md border px-2.5 text-left text-xs text-gecko-white transition-colors duration-150 ease-out hover:border-gecko-gray/45 hover:bg-gecko-shade/45 {open
-			? 'border-gecko-gray/45 bg-gecko-shade/45'
-			: 'border-gecko-shade/90 bg-gecko-shade/25'}"
+		class="terminal-button inline-flex h-9 items-center gap-2 px-2.5 text-left text-xs text-gecko-white {open
+			? 'terminal-button-primary'
+			: 'text-gecko-white'}"
 		title={value === "all"
 			? "Showing assets across all tracked venues"
 			: `Showing assets listed on ${selected?.label ?? value}`}
@@ -132,10 +132,10 @@
 
 	{#if open}
 		<div
-			class="venue-popover absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gecko-shade bg-[#101014] p-2 shadow-2xl shadow-black/40"
+			class="venue-popover terminal-panel absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] p-2"
 		>
 			<label
-				class="flex h-10 items-center gap-2 rounded-md bg-gecko-shade/55 px-3 text-sm text-gecko-gray focus-within:text-gecko-white"
+				class="terminal-input flex h-10 items-center gap-2 px-3 text-sm text-gecko-gray focus-within:text-gecko-white"
 			>
 				<Search size={17} strokeWidth={1.8} aria-hidden="true" />
 				<input
@@ -153,8 +153,8 @@
 					onclick={() => selectVenue("all")}
 					class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out {value ===
 					'all'
-						? 'bg-gecko-shade/70'
-						: 'hover:bg-gecko-shade/50'}"
+						? 'bg-primary/15'
+						: 'hover:bg-gecko-shade/45'}"
 				>
 					<div class="grid size-7 shrink-0 grid-cols-2 gap-0.5" aria-hidden="true">
 						{#each venues.slice(0, 4) as venue (venue.id)}
@@ -182,8 +182,8 @@
 						onclick={() => selectVenue(venue.id)}
 						class="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-gecko-white transition-colors duration-150 ease-out {value ===
 						venue.id
-							? 'bg-gecko-shade/70'
-							: 'hover:bg-gecko-shade/50'}"
+							? 'bg-primary/15'
+							: 'hover:bg-gecko-shade/45'}"
 					>
 						<div class="flex size-7 shrink-0 items-center justify-center">
 							<Icon src={venue.icon} alt={venue.label} nested />
