@@ -42,7 +42,7 @@
 		<div class="flex flex-1 items-center justify-center">
 			<div class="flex max-w-2xl flex-col items-center justify-center px-8 text-center lg:px-4">
 				<h1 class="text-2xl font-semibold text-gecko-white sm:text-4xl">
-					Find cross-venue RWA perp dislocations before liquidity moves.
+					Discover on-chain RWA perps before liquidity moves.
 				</h1>
 				<p class="max-w-lg pt-2 text-sm text-gecko-gray/85">
 					<Numeric
@@ -53,12 +53,6 @@
 					/> traded in the last 24h across real-world asset perps, venue liquidity, and reference price
 					ranges.
 				</p>
-				<a
-					href="/opportunities"
-					class="press mt-5 inline-flex h-9 items-center rounded-md border border-gecko-shade bg-gecko-white px-4 text-sm font-semibold text-black hover:bg-gecko-white/90"
-				>
-					View opportunities
-				</a>
 			</div>
 		</div>
 	</DitherHero>
@@ -67,7 +61,7 @@
 <!-- Featured cards (uniswap-style hero strip) -->
 <FeaturedMovers {snapshot} {sparklines} />
 
-<!-- Opportunity radar -->
+<!-- Market signals -->
 <HomepageIntelligence {snapshot} {sparklines} />
 
 <!-- Category + venue filters -->

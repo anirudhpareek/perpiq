@@ -11,7 +11,7 @@
 <div class="flex flex-1 flex-col {extraClass}">
 	<!-- Card header -->
 	<div
-		class="asset-surface-header flex h-10 items-center border-b border-b-gecko-shade px-4 text-sm font-medium text-gecko-white"
+		class="flex h-10 items-center border-b border-b-gecko-shade bg-gecko-black px-4 text-xs font-medium"
 	>
 		<h3>{title}</h3>
 	</div>

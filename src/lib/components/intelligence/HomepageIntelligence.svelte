@@ -169,16 +169,10 @@
 		<!-- Section header -->
 		<div class="flex flex-col gap-1">
 			<div class="flex items-baseline gap-3">
-				<h2 class="text-base font-medium text-gecko-white md:text-lg">Opportunity radar</h2>
+				<h2 class="text-base font-medium text-gecko-white md:text-lg">Market signals</h2>
 				<span class="text-xs text-gecko-gray/60">
-					Cross-venue ranges, stale venues, liquidity shifts, and listing changes
+					Global changes across volume, OI, listings, and reference prices
 				</span>
-				<a
-					href="/opportunities"
-					class="ml-auto hidden font-mono text-[10px] tracking-wide text-gecko-gray/70 uppercase hover:text-gecko-white md:inline-flex"
-				>
-					View all ->
-				</a>
 			</div>
 		</div>
 

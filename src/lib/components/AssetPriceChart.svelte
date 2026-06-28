@@ -173,7 +173,7 @@
 		{#if hasPoints}
 			<LazyChart options={opts} />
 		{:else}
-			<div class="flex h-full w-full items-center justify-center text-sm text-gecko-gray/75">
+			<div class="flex h-full w-full items-center justify-center text-xs text-gecko-gray/60">
 				Building price history… (need more batches)
 			</div>
 		{/if}
@@ -187,10 +187,10 @@
 					type="button"
 					onclick={() => (range = r)}
 					disabled={rangeUnavailable(r)}
-					class="press rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-45 {range ===
+					class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-40 {range ===
 					r
 						? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-						: 'border-transparent text-gecko-gray/80 hover:bg-gecko-shade/40 hover:text-gecko-white'}"
+						: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
 				>
 					{r}
 				</button>
@@ -200,20 +200,20 @@
 			<button
 				type="button"
 				onclick={() => (mode = "price")}
-				class="press rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-wide uppercase {mode ===
+				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase {mode ===
 				'price'
 					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-					: 'border-transparent text-gecko-gray/80 hover:bg-gecko-shade/40 hover:text-gecko-white'}"
+					: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
 			>
 				Price
 			</button>
 			<button
 				type="button"
 				onclick={() => (mode = "volume")}
-				class="press rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-wide uppercase {mode ===
+				class="press rounded-full border px-2.5 py-1 font-mono text-[11px] tracking-wide uppercase {mode ===
 				'volume'
 					? 'border-gecko-gray bg-gecko-shade text-gecko-white'
-					: 'border-transparent text-gecko-gray/80 hover:bg-gecko-shade/40 hover:text-gecko-white'}"
+					: 'border-transparent text-gecko-gray hover:bg-gecko-shade/40 hover:text-gecko-white'}"
 			>
 				Volume
 			</button>
