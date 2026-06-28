@@ -149,7 +149,7 @@
 				preloadData(`/asset/${assetId}`);
 			}}
 			onclick={() => goto(`/asset/${assetId}`)}
-			class="h-11 cursor-pointer border-b-gecko-shade text-xs transition-none hover:bg-gecko-black-hover [&_td]:px-0 [&_td]:text-left [&_td]:align-middle"
+			class="h-11 cursor-pointer border-b-gecko-shade text-sm transition-none hover:bg-gecko-black-hover [&_td]:px-0 [&_td]:text-left [&_td]:align-middle"
 		>
 			<!-- Ranking change -->
 			<Table.Cell class="w-10 text-center!"><Numeric value={rankDelta} change /></Table.Cell>
@@ -199,7 +199,7 @@
 			{@const hourChange = computeHourChange(sp)}
 			<Table.Cell class="w-16">
 				{#if hourChange === null}
-					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+					<span class="font-mono text-[11px] text-gecko-gray/55">—</span>
 				{:else}
 					<Numeric value={hourChange * 100} format="numeric" change percentage />
 				{/if}
@@ -219,7 +219,7 @@
 						format="numeric"
 						change
 						percentage
-						class="text-[10px]"
+						class="text-[11px]"
 					/>
 				</div>
 			</Table.Cell>
@@ -233,7 +233,7 @@
 						format="numeric"
 						change
 						percentage
-						class="text-[10px]"
+						class="text-[11px]"
 					/>
 				</div>
 			</Table.Cell>
@@ -242,7 +242,7 @@
 			<Table.Cell class="w-38">
 				{#if signal}
 					<span
-						class="inline-flex max-w-36 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/30 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-gecko-gray uppercase"
+						class="inline-flex max-w-36 items-center gap-1 rounded-sm border border-gecko-shade/80 bg-gecko-shade/35 px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-gecko-gray/90 uppercase"
 						title={signal.label}
 					>
 						<span class="truncate">{tableSignalLabel(signal.kind)}</span>
@@ -251,7 +251,7 @@
 						{/if}
 					</span>
 				{:else}
-					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+					<span class="font-mono text-[11px] text-gecko-gray/55">—</span>
 				{/if}
 			</Table.Cell>
 
@@ -260,7 +260,7 @@
 				{#if sparklines[assetId]?.length}
 					<Sparkline series={sparklines[assetId]} width={70} height={22} />
 				{:else}
-					<span class="font-mono text-[10px] text-gecko-gray/30">—</span>
+					<span class="font-mono text-[11px] text-gecko-gray/55">—</span>
 				{/if}
 			</Table.Cell>
 

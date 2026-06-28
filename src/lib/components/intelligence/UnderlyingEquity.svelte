@@ -74,61 +74,78 @@
 			<Card title="Underlying equity">
 				<div class="flex flex-1 flex-col p-4">
 					{#if loading}
-						<p class="text-xs text-gecko-gray/60">Loading {ticker} fundamentals…</p>
+						<p class="text-sm text-gecko-gray/75">Loading {ticker} fundamentals…</p>
 					{:else if data}
 						<!-- Top row: identity + sector -->
-						<div class="flex items-baseline gap-2 text-xs">
-							<span class="font-mono uppercase text-gecko-white">{ticker}</span>
+						<div class="flex items-baseline gap-2 text-sm">
+							<span class="font-mono text-gecko-white uppercase">{ticker}</span>
 							{#if data.sector}
 								<span class="text-gecko-gray">·</span>
 								<span class="text-gecko-gray">{data.sector}</span>
 							{/if}
-							<span class="ml-auto rounded-sm border border-gecko-shade bg-gecko-shade/40 px-1.5 py-0.5 font-mono text-[10px] uppercase text-gecko-gray">
+							<span
+								class="ml-auto rounded-sm border border-gecko-shade bg-gecko-shade/40 px-1.5 py-0.5 font-mono text-[11px] text-gecko-gray/85 uppercase"
+							>
 								yahoo
 							</span>
 						</div>
 
 						<!-- Fundamental grid -->
-						<div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs md:grid-cols-3">
+						<div class="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 text-sm md:grid-cols-3">
 							{#if data.marketCap !== undefined}
 								<div>
-									<div class="text-gecko-gray">Market cap</div>
+									<div class="text-gecko-gray/85">Market cap</div>
 									<div class="text-gecko-white">
-										<Numeric value={data.marketCap} format="currency" currency="USD" class="text-gecko-white" />
+										<Numeric
+											value={data.marketCap}
+											format="currency"
+											currency="USD"
+											class="text-gecko-white"
+										/>
 									</div>
 								</div>
 							{/if}
 							{#if data.revenueTtm !== undefined}
 								<div>
-									<div class="text-gecko-gray">Revenue (TTM)</div>
+									<div class="text-gecko-gray/85">Revenue (TTM)</div>
 									<div class="text-gecko-white">
-										<Numeric value={data.revenueTtm} format="currency" currency="USD" class="text-gecko-white" />
+										<Numeric
+											value={data.revenueTtm}
+											format="currency"
+											currency="USD"
+											class="text-gecko-white"
+										/>
 									</div>
 								</div>
 							{/if}
 							{#if data.earningsTtm !== undefined}
 								<div>
-									<div class="text-gecko-gray">Earnings (TTM)</div>
+									<div class="text-gecko-gray/85">Earnings (TTM)</div>
 									<div class="text-gecko-white">
-										<Numeric value={data.earningsTtm} format="currency" currency="USD" class="text-gecko-white" />
+										<Numeric
+											value={data.earningsTtm}
+											format="currency"
+											currency="USD"
+											class="text-gecko-white"
+										/>
 									</div>
 								</div>
 							{/if}
 							{#if data.peTrailing !== undefined}
 								<div>
-									<div class="text-gecko-gray">P/E (trailing)</div>
+									<div class="text-gecko-gray/85">P/E (trailing)</div>
 									<div class="font-mono text-gecko-white">{data.peTrailing.toFixed(2)}</div>
 								</div>
 							{/if}
 							{#if data.dividendYield !== undefined}
 								<div>
-									<div class="text-gecko-gray">Dividend yield</div>
+									<div class="text-gecko-gray/85">Dividend yield</div>
 									<div class="font-mono text-gecko-white">{fmtPct(data.dividendYield)}</div>
 								</div>
 							{/if}
 							{#if data.fiftyTwoWeekChange !== undefined}
 								<div>
-									<div class="text-gecko-gray">52w performance</div>
+									<div class="text-gecko-gray/85">52w performance</div>
 									<div
 										class="font-mono {data.fiftyTwoWeekChange >= 0
 											? 'text-green-400'
@@ -140,15 +157,20 @@
 							{/if}
 							{#if data.dailyVolumeUsd !== undefined}
 								<div>
-									<div class="text-gecko-gray">Equity 24h volume</div>
+									<div class="text-gecko-gray/85">Equity 24h volume</div>
 									<div class="text-gecko-white">
-										<Numeric value={data.dailyVolumeUsd} format="currency" currency="USD" class="text-gecko-white" />
+										<Numeric
+											value={data.dailyVolumeUsd}
+											format="currency"
+											currency="USD"
+											class="text-gecko-white"
+										/>
 									</div>
 								</div>
 							{/if}
 							{#if data.nextEarningsDate}
 								<div>
-									<div class="text-gecko-gray">Next earnings</div>
+									<div class="text-gecko-gray/85">Next earnings</div>
 									<div class="font-mono text-gecko-white">{fmtDate(data.nextEarningsDate)}</div>
 								</div>
 							{/if}
@@ -161,8 +183,8 @@
 				<Card title="On-chain vs underlying">
 					<div class="flex flex-1 flex-col p-4">
 						<!-- Perp volume share of equity -->
-						<div class="flex items-baseline justify-between text-xs">
-							<span class="text-gecko-gray">Perp volume / equity volume</span>
+						<div class="flex items-baseline justify-between text-sm">
+							<span class="text-gecko-gray/85">Perp volume / equity volume</span>
 							<span class="font-mono text-gecko-white">
 								{fmtPct(comp.perpVolumeShareOfEquity, 3)}
 							</span>
@@ -177,8 +199,8 @@
 						{/if}
 
 						<!-- OI / market cap -->
-						<div class="mt-4 flex items-baseline justify-between text-xs">
-							<span class="text-gecko-gray">Perp OI / market cap</span>
+						<div class="mt-4 flex items-baseline justify-between text-sm">
+							<span class="text-gecko-gray/85">Perp OI / market cap</span>
 							<span class="font-mono text-gecko-white">
 								{fmtPct(comp.perpOiShareOfMarketCap, 4)}
 							</span>
@@ -192,7 +214,7 @@
 							</div>
 						{/if}
 
-						<p class="mt-4 text-[11px] text-gecko-gray/70">
+						<p class="mt-4 text-xs leading-5 text-gecko-gray/78">
 							Perp activity is measured in the latest snapshot; equity volume and market cap are
 							pulled from the underlying TradFi feed. Treat as a rough liquidity ratio, not a
 							precise market-share number.

@@ -5,6 +5,7 @@
 
 	const nav: { title: string; path: string }[] = [
 		{ title: "Markets", path: "/" },
+		{ title: "Opportunities", path: "/opportunities" },
 		{ title: "Venues", path: "/venues" },
 		{ title: "All markets", path: "/markets" }
 	];

@@ -38,7 +38,7 @@ export type SignalKind =
 	| "venue_dominance_shift"
 	| "stale_market";
 
-export type SignalSeverity = "info" | "watch" | "alert";
+export type SignalSeverity = "watch" | "interesting" | "actionable" | "risky";
 
 export type Signal = {
 	kind: SignalKind;
@@ -292,7 +292,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 		if (!asset.isNew && asset.volumeChange >= THRESHOLDS.volumeSpike) {
 			signals.push({
 				kind: "volume_spike",
-				severity: asset.volumeChange >= 2 ? "alert" : "watch",
+				severity: asset.volumeChange >= 2 ? "actionable" : "interesting",
 				assetId,
 				value: asset.volumeChange,
 				label: `Volume ${pct(asset.volumeChange)} vs 24h ago`
@@ -309,7 +309,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 		if (!asset.isNew && asset.oiChange >= THRESHOLDS.oiSpike) {
 			signals.push({
 				kind: "oi_spike",
-				severity: asset.oiChange >= 1 ? "alert" : "watch",
+				severity: asset.oiChange >= 1 ? "actionable" : "interesting",
 				assetId,
 				value: asset.oiChange,
 				label: `Open interest ${pct(asset.oiChange)} vs 24h ago`
@@ -333,7 +333,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 			if (m.isNew) {
 				signals.push({
 					kind: "new_market",
-					severity: "info",
+					severity: "watch",
 					assetId,
 					marketKey,
 					venue: m.venue,
@@ -345,7 +345,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 			if (m.volume === 0 && m.oi > 0) {
 				signals.push({
 					kind: "stale_market",
-					severity: "info",
+					severity: "risky",
 					assetId,
 					marketKey,
 					venue: m.venue,
@@ -361,7 +361,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 	if (div && div.bps >= THRESHOLDS.priceDivergenceBps) {
 		signals.push({
 			kind: "price_divergence",
-			severity: div.bps >= 200 ? "alert" : "watch",
+			severity: div.bps >= 200 ? "actionable" : "interesting",
 			assetId,
 			value: div.bps,
 			label: `Cross-venue reference price range ${bps(div.bps)}`
@@ -373,7 +373,7 @@ export function detectAssetSignals(snapshot: DiffedSnapshot, assetId: string): S
 		const top = conc.venues[0];
 		signals.push({
 			kind: "high_concentration",
-			severity: conc.topVolumeShare >= 0.9 ? "watch" : "info",
+			severity: conc.topVolumeShare >= 0.9 ? "risky" : "watch",
 			assetId,
 			marketKey: top.marketKey,
 			venue: top.venue,
@@ -487,7 +487,7 @@ export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: stri
 	if (market.isNew) {
 		return {
 			kind: "new_market",
-			severity: "info",
+			severity: "watch",
 			assetId: meta.asset,
 			marketKey,
 			venue: market.venue,
@@ -499,7 +499,7 @@ export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: stri
 	if (market.volume === 0 && market.oi > 0) {
 		return {
 			kind: "stale_market",
-			severity: "info",
+			severity: "risky",
 			assetId: meta.asset,
 			marketKey,
 			venue: market.venue,
@@ -516,7 +516,7 @@ export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: stri
 	if (marketIsRangeEdge && priceDivergence.bps >= THRESHOLDS.priceDivergenceBps) {
 		return {
 			kind: "price_divergence",
-			severity: priceDivergence.bps >= 200 ? "alert" : "watch",
+			severity: priceDivergence.bps >= 200 ? "actionable" : "interesting",
 			assetId: meta.asset,
 			marketKey,
 			venue: market.venue,
@@ -529,7 +529,7 @@ export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: stri
 		if (market.volumeChange >= THRESHOLDS.volumeSpike) {
 			return {
 				kind: "volume_spike",
-				severity: market.volumeChange >= 2 ? "alert" : "watch",
+				severity: market.volumeChange >= 2 ? "actionable" : "interesting",
 				assetId: meta.asset,
 				marketKey,
 				venue: market.venue,
@@ -540,7 +540,7 @@ export function getPrimaryMarketSignal(snapshot: DiffedSnapshot, marketKey: stri
 		if (market.oiChange >= THRESHOLDS.oiSpike) {
 			return {
 				kind: "oi_spike",
-				severity: market.oiChange >= 1 ? "alert" : "watch",
+				severity: market.oiChange >= 1 ? "actionable" : "interesting",
 				assetId: meta.asset,
 				marketKey,
 				venue: market.venue,
@@ -686,6 +686,250 @@ export type HomepageIntelligence = {
 };
 
 const MAX_PER_LIST = 6;
+
+export type OpportunityKind =
+	| "price_range"
+	| "stale_market"
+	| "liquidity_migration"
+	| "new_listing"
+	| "high_concentration"
+	| "volume_oi_shock";
+
+export type OpportunitySeverity = SignalSeverity;
+
+export type Opportunity = {
+	id: string;
+	kind: OpportunityKind;
+	severity: OpportunitySeverity;
+	score: number;
+	assetId: string;
+	marketKeys: string[];
+	venue?: string;
+	namespace?: string;
+	bps?: number;
+	value: number;
+	volume: number;
+	oi: number;
+	primary: string;
+	secondary: string;
+	why: string;
+};
+
+export type OpportunityFilters = {
+	category?: string;
+	venue?: string;
+	kind?: OpportunityKind | "all";
+	minVolume?: number;
+	minBps?: number;
+};
+
+function isActionableAsset(asset: DiffedSnapshot["assets"][string], bpsValue = 0): boolean {
+	return (
+		asset.volume >= 1_000_000 && asset.oi >= 500_000 && bpsValue >= THRESHOLDS.priceDivergenceBps
+	);
+}
+
+function opportunitySeverity(
+	asset: DiffedSnapshot["assets"][string],
+	kind: OpportunityKind,
+	value = 0
+): OpportunitySeverity {
+	if (kind === "stale_market") return "risky";
+	if (kind === "price_range" && isActionableAsset(asset, value)) return "actionable";
+	if (kind === "high_concentration" && value >= 0.85) return "risky";
+	if (kind === "liquidity_migration" || kind === "volume_oi_shock") return "interesting";
+	return "watch";
+}
+
+function categoryMatchesOpportunity(
+	snapshot: DiffedSnapshot,
+	assetId: string,
+	category: string | undefined
+): boolean {
+	if (!category || category === "all") return true;
+	if (category === "new")
+		return (
+			snapshot.assets[assetId]?.isNew ||
+			snapshot.assets[assetId]?.marketIds.some((id) => snapshot.markets[id]?.isNew)
+		);
+	if (category === "divergences")
+		return (computePriceDivergence(snapshot, assetId)?.bps ?? 0) >= THRESHOLDS.priceDivergenceBps;
+	return snapshot.assets[assetId]?.category === category;
+}
+
+function venueMatchesOpportunity(
+	snapshot: DiffedSnapshot,
+	marketKeys: string[],
+	venue: string | undefined
+): boolean {
+	if (!venue || venue === "all") return true;
+	return marketKeys.some((key) => snapshot.markets[key]?.venue === venue);
+}
+
+export function buildOpportunities(
+	snapshot: DiffedSnapshot,
+	filters: OpportunityFilters = {}
+): Opportunity[] {
+	const opportunities: Opportunity[] = [];
+	const minVolume = filters.minVolume ?? 0;
+	const minBps = filters.minBps ?? 0;
+
+	for (const [assetId, asset] of Object.entries(snapshot.assets)) {
+		if (!categoryMatchesOpportunity(snapshot, assetId, filters.category)) continue;
+		if (asset.volume < minVolume) continue;
+
+		const conc = computeVenueConcentration(snapshot, assetId);
+		const div = computePriceDivergence(snapshot, assetId);
+		if (div && div.bps >= Math.max(THRESHOLDS.priceDivergenceBps, minBps)) {
+			const marketKeys = [div.lowMarketKey, div.highMarketKey];
+			if (venueMatchesOpportunity(snapshot, marketKeys, filters.venue)) {
+				const lowMarket = snapshot.markets[div.lowMarketKey];
+				const highMarket = snapshot.markets[div.highMarketKey];
+				const severity = opportunitySeverity(asset, "price_range", div.bps);
+				opportunities.push({
+					id: `range:${assetId}`,
+					kind: "price_range",
+					severity,
+					score: div.bps * Math.log10(Math.max(asset.volume, 10)),
+					assetId,
+					marketKeys,
+					bps: div.bps,
+					value: div.bps,
+					volume: asset.volume,
+					oi: asset.oi,
+					primary: `${bps(div.bps)} venue range`,
+					secondary: `${humanVenueName(lowMarket.venue, lowMarket.namespace)} low / ${humanVenueName(highMarket.venue, highMarket.namespace)} high`,
+					why: `Comparable-quote venues are ${bps(div.bps)} apart with ${formatCompact(asset.volume)} 24h volume and ${formatCompact(asset.oi)} OI.`
+				});
+			}
+		}
+
+		for (const marketKey of asset.marketIds) {
+			const market = snapshot.markets[marketKey];
+			if (!market) continue;
+			if (!venueMatchesOpportunity(snapshot, [marketKey], filters.venue)) continue;
+
+			if (market.volume === 0 && market.oi > 0) {
+				opportunities.push({
+					id: `stale:${marketKey}`,
+					kind: "stale_market",
+					severity: "risky",
+					score: market.oi,
+					assetId,
+					marketKeys: [marketKey],
+					venue: market.venue,
+					namespace: market.namespace,
+					value: market.oi,
+					volume: market.volume,
+					oi: market.oi,
+					primary: "Stale venue risk",
+					secondary: humanVenueName(market.venue, market.namespace),
+					why: `${humanVenueName(market.venue, market.namespace)} has open interest but no recorded 24h volume in the latest batch.`
+				});
+			}
+
+			if (!asset.isNew && market.isNew) {
+				opportunities.push({
+					id: `new:${marketKey}`,
+					kind: "new_listing",
+					severity: "watch",
+					score: Math.max(market.volume, 1),
+					assetId,
+					marketKeys: [marketKey],
+					venue: market.venue,
+					namespace: market.namespace,
+					value: 1,
+					volume: market.volume,
+					oi: market.oi,
+					primary: "New venue listing",
+					secondary: humanVenueName(market.venue, market.namespace),
+					why: `A new ${assetDisplayName(snapshot, assetId)} market appeared on ${humanVenueName(market.venue, market.namespace)}.`
+				});
+			}
+		}
+
+		if (conc.venueCount > 1 && conc.topVolumeShare >= 0.65) {
+			const top = conc.venues[0];
+			if (venueMatchesOpportunity(snapshot, [top.marketKey], filters.venue)) {
+				opportunities.push({
+					id: `concentration:${assetId}`,
+					kind: "high_concentration",
+					severity: opportunitySeverity(asset, "high_concentration", conc.topVolumeShare),
+					score: conc.topVolumeShare * Math.log10(Math.max(asset.volume, 10)) * 100,
+					assetId,
+					marketKeys: [top.marketKey],
+					venue: top.venue,
+					namespace: top.namespace,
+					value: conc.topVolumeShare,
+					volume: asset.volume,
+					oi: asset.oi,
+					primary: `${(conc.topVolumeShare * 100).toFixed(1)}% venue concentration`,
+					secondary: humanVenueName(top.venue, top.namespace),
+					why: `${humanVenueName(top.venue, top.namespace)} accounts for ${(top.volumeShare * 100).toFixed(1)}% of volume and ${(top.oiShare * 100).toFixed(1)}% of OI.`
+				});
+			}
+		}
+
+		const absVolumeChange = Math.abs(asset.volumeChange);
+		const absOiChange = Math.abs(asset.oiChange);
+		if (!asset.isNew && asset.volume >= THRESHOLDS.moverMinVolumeUsd) {
+			if (absVolumeChange >= THRESHOLDS.volumeSpike && absOiChange >= THRESHOLDS.oiSpike) {
+				if (venueMatchesOpportunity(snapshot, asset.marketIds, filters.venue)) {
+					opportunities.push({
+						id: `shock:${assetId}`,
+						kind: "volume_oi_shock",
+						severity: opportunitySeverity(asset, "volume_oi_shock"),
+						score: (absVolumeChange + absOiChange) * Math.log10(Math.max(asset.volume, 10)),
+						assetId,
+						marketKeys: asset.marketIds,
+						value: asset.volumeChange,
+						volume: asset.volume,
+						oi: asset.oi,
+						primary: `Volume ${pct(asset.volumeChange)} / OI ${pct(asset.oiChange)}`,
+						secondary: "market shock",
+						why: `Volume and open interest moved together over 24h, suggesting fresh positioning or unwind pressure.`
+					});
+				}
+			}
+		}
+
+		const venueShift = snapshot.aggregates.oiByVenue.find(
+			(v) =>
+				conc.venues.some((row) => row.venue === v.venue) &&
+				Math.abs(v.oiShareChange) >= THRESHOLDS.venueDominanceShift
+		);
+		if (venueShift) {
+			const venueRows = conc.venues.filter((row) => row.venue === venueShift.venue);
+			if (
+				venueMatchesOpportunity(
+					snapshot,
+					venueRows.map((row) => row.marketKey),
+					filters.venue
+				)
+			) {
+				opportunities.push({
+					id: `migration:${assetId}:${venueShift.venue}`,
+					kind: "liquidity_migration",
+					severity: "interesting",
+					score: Math.abs(venueShift.oiShareChange) * Math.log10(Math.max(asset.oi, 10)) * 100,
+					assetId,
+					marketKeys: venueRows.map((row) => row.marketKey),
+					venue: venueShift.venue,
+					value: venueShift.oiShareChange,
+					volume: asset.volume,
+					oi: asset.oi,
+					primary: `${pct(venueShift.oiShareChange)} venue OI share`,
+					secondary: humanVenueName(venueShift.venue),
+					why: `${humanVenueName(venueShift.venue)} OI share changed by ${pct(venueShift.oiShareChange)} while this asset trades across ${conc.venueCount} venues.`
+				});
+			}
+		}
+	}
+
+	return opportunities
+		.filter((row) => (filters.kind && filters.kind !== "all" ? row.kind === filters.kind : true))
+		.sort((a, b) => b.score - a.score);
+}
 
 export function buildHomepageIntelligence(snapshot: DiffedSnapshot): HomepageIntelligence {
 	// Asset moves (filter dust; exclude brand-new assets where change=0 by definition)

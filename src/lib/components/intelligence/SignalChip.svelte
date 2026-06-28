@@ -5,9 +5,10 @@
 	let { signal }: { signal: Signal } = $props();
 
 	const palette = {
-		info: "border-gecko-shade bg-gecko-shade/40 text-gecko-gray",
-		watch: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-		alert: "border-red-500/40 bg-red-500/10 text-red-300"
+		watch: "border-gecko-shade bg-gecko-shade/40 text-gecko-gray",
+		interesting: "border-cyan-400/30 bg-cyan-400/8 text-cyan-200",
+		actionable: "border-emerald-400/35 bg-emerald-400/10 text-emerald-300",
+		risky: "border-amber-400/40 bg-amber-400/10 text-amber-300"
 	} as const;
 </script>
 

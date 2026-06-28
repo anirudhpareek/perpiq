@@ -2,6 +2,8 @@ import type { Meta } from "$lib/types";
 import tickers from "$config/tickers.json";
 import type { PlainMarketEntry } from "$lib/serialize";
 import { getNormalizedCurrency } from "$lib/number-format";
+import { executionMetadataForMarket } from "$lib/execution/metadata";
+import type { ExecutionMarketMetadata } from "$lib/execution/types";
 
 // Reverse index (marketKey => {asset, category})
 // "hyperliquid:xyz:NVDA" → { asset: "nvda", name: "Nvidia", category: "stocks", quote: "KRW", venueQuote: "USD" }
@@ -53,7 +55,7 @@ type Snapshot = {
 	// Individual markets
 	markets: Record<
 		string,
-		{
+		ExecutionMarketMetadata & {
 			// Exchange
 			venue: string;
 			// Sub-DEX
@@ -66,6 +68,8 @@ type Snapshot = {
 			volume: number;
 			// Market OI
 			oi: number;
+			// Venue max leverage, if surfaced by the collector
+			maxLeverage: number | null;
 		}
 	>;
 
@@ -204,8 +208,17 @@ export function buildSnapshot(markets: PlainMarketEntry[]): Snapshot {
 		if (!MARKET_TO_ASSET.has(key)) continue;
 
 		// --- 2: Populate market data ---
-		const { venue, namespace, ticker, refPx, volume, oi } = market;
-		snapshotMarkets[key] = { venue, namespace, ticker, refPx, volume, oi };
+		const { venue, namespace, ticker, refPx, volume, oi, maxLeverage } = market;
+		snapshotMarkets[key] = {
+			venue,
+			namespace,
+			ticker,
+			refPx,
+			volume,
+			oi,
+			maxLeverage,
+			...executionMetadataForMarket(venue, namespace)
+		};
 
 		// --- 3: Augment overall asset from market data ---
 		// Collect, must exist given above validation

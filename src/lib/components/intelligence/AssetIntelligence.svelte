@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ExternalLink } from "@lucide/svelte";
 	import Card from "$components/Card.svelte";
-	import Grid from "$components/Grid.svelte";
 	import Icon from "$components/Icon.svelte";
 	import Numeric from "$components/Numeric.svelte";
 	import exchanges from "$config/exchanges.json";
@@ -35,33 +34,29 @@
 
 {#if intel}
 	<!-- Market context header (summary + signals) -->
-	<div>
-		<Grid bottom={false}>
-			<Card title="Market context">
-				<div class="flex flex-1 flex-col gap-3 p-4">
-					<p class="text-xs leading-relaxed text-gecko-gray/90 md:text-sm">
-						{intel.summary}
-					</p>
+	<div class="flex flex-col gap-5">
+		<Card title="Market context" class="asset-surface overflow-hidden">
+			<div class="flex flex-1 flex-col gap-3 p-4">
+				<p class="text-sm leading-6 text-gecko-gray/90">
+					{intel.summary}
+				</p>
 
-					{#if intel.signals.length > 0}
-						<div class="flex flex-wrap gap-1.5">
-							{#each intel.signals.slice(0, 4) as signal (`${signal.kind}:${signal.marketKey ?? signal.assetId ?? ""}`)}
-								<SignalChip {signal} />
-							{/each}
-						</div>
-					{/if}
-				</div>
-			</Card>
-		</Grid>
-	</div>
+				{#if intel.signals.length > 0}
+					<div class="flex flex-wrap gap-1.5">
+						{#each intel.signals.slice(0, 4) as signal (`${signal.kind}:${signal.marketKey ?? signal.assetId ?? ""}`)}
+							<SignalChip {signal} />
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</Card>
 
-	<!-- Venue concentration + price range -->
-	<div>
-		<Grid bottom={false}>
-			<Card title="Venue concentration">
+		<!-- Venue concentration + price range -->
+		<div class="grid gap-5 xl:grid-cols-2">
+			<Card title="Venue concentration" class="asset-surface overflow-hidden">
 				<div class="flex flex-1 flex-col p-4">
 					<!-- Concentration meta -->
-					<div class="flex items-center justify-between pb-2 text-xs">
+					<div class="flex items-center justify-between pb-3 text-sm">
 						<div class="flex items-center gap-2">
 							<span class="text-gecko-gray">HHI</span>
 							<span class="font-mono text-gecko-white"
@@ -100,7 +95,7 @@
 					<!-- Venue list with deep links -->
 					<div class="mt-3 flex flex-col">
 						<div
-							class="hidden border-t border-t-gecko-shade/60 py-1.5 font-mono text-[9px] tracking-wide text-gecko-gray/50 uppercase md:grid md:grid-cols-[1fr_64px_64px_84px_84px_20px]"
+							class="hidden border-t border-t-gecko-shade/60 py-2 font-mono text-[10px] tracking-wide text-gecko-gray/65 uppercase md:grid md:grid-cols-[1fr_64px_64px_84px_84px_20px]"
 						>
 							<span>Venue</span>
 							<span class="text-right">Vol share</span>
@@ -116,7 +111,7 @@
 									href={marketToURL(v.venue, v.namespace, snapshot.markets[v.marketKey].ticker)}
 									target="_blank"
 									rel="noopener"
-									class="grid grid-cols-[1fr_58px_58px_20px] items-center gap-2 border-t border-t-gecko-shade/60 py-2 text-xs hover:bg-gecko-black-hover md:grid-cols-[1fr_64px_64px_84px_84px_20px]"
+									class="grid grid-cols-[1fr_58px_58px_20px] items-center gap-2 border-t border-t-gecko-shade/60 py-2.5 text-sm hover:bg-gecko-black-hover md:grid-cols-[1fr_64px_64px_84px_84px_20px]"
 								>
 									<div class="flex min-w-0 items-center gap-2">
 										<div class="flex w-7 items-center justify-center">
@@ -131,10 +126,10 @@
 											</span>
 										{/if}
 									</div>
-									<span class="w-16 text-right font-mono text-gecko-gray">
+									<span class="w-16 text-right font-mono text-gecko-gray/85">
 										{(v.volumeShare * 100).toFixed(1)}%
 									</span>
-									<span class="w-16 text-right font-mono text-gecko-gray">
+									<span class="w-16 text-right font-mono text-gecko-gray/85">
 										{(v.oiShare * 100).toFixed(1)}%
 									</span>
 									<span class="hidden w-20 text-right md:inline">
@@ -166,16 +161,16 @@
 				</div>
 			</Card>
 
-			<Card title="Venue price range">
+			<Card title="Venue price range" class="asset-surface overflow-hidden">
 				<div class="flex flex-1 flex-col p-4">
 					{#if intel.priceDivergence}
 						{@const d = intel.priceDivergence}
 						{@const quote = MARKET_TO_ASSET.get(d.lowMarketKey)?.quote ?? "USD"}
-						<div class="flex items-baseline gap-2 text-lg">
+						<div class="flex items-baseline gap-2 text-xl">
 							<span class="font-mono text-gecko-white">{d.bps.toFixed(0)}</span>
-							<span class="text-xs text-gecko-gray">bps high–low</span>
+							<span class="text-sm text-gecko-gray">bps high-low</span>
 						</div>
-						<div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+						<div class="mt-4 grid grid-cols-2 gap-5 text-sm">
 							<div>
 								<div class="text-gecko-gray">Low</div>
 								<div class="text-gecko-white">
@@ -225,18 +220,18 @@
 								</a>
 							</div>
 						</div>
-						<p class="mt-3 text-[11px] text-gecko-gray/70">
+						<p class="mt-4 text-xs leading-5 text-gecko-gray/78">
 							Computed only from comparable reference prices in the asset's preferred quote
 							currency. Wider ranges may indicate stale prices, thin liquidity, or venue-specific
 							risk.
 						</p>
 					{:else}
-						<p class="text-xs text-gecko-gray/75">
+						<p class="text-sm text-gecko-gray/80">
 							Not enough comparable-quote venues to compute a price range.
 						</p>
 					{/if}
 				</div>
 			</Card>
-		</Grid>
+		</div>
 	</div>
 {/if}

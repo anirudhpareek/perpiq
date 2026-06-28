@@ -29,6 +29,9 @@
 	--color-gecko-gray: oklch(0.78 0.005 270); /* text-mid */
 	--color-gecko-green: oklch(0.78 0.18 152); /* positive */
 	--color-gecko-red: oklch(0.68 0.22 27); /* negative */
+	--color-primary: oklch(0.7 0.22 295);
+	--color-secondary: oklch(0.78 0.18 205);
+	--color-warning: oklch(0.78 0.16 80);
 
 	/* Motion tokens (DESIGN.md: default easing) */
 	--ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
@@ -72,6 +75,41 @@ figcaption {
 .press:active {
 	transform: scale(0.96);
 	transition-duration: 60ms;
+}
+
+.execution-panel {
+	border-radius: 18px;
+	background: color-mix(in oklch, var(--color-gecko-black) 82%, var(--color-gecko-shade));
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.08),
+		0 14px 40px rgba(0, 0, 0, 0.28);
+}
+
+.execution-panel:focus-within {
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.1),
+		0 0 0 2px color-mix(in oklch, var(--color-primary) 18%, transparent),
+		0 14px 40px rgba(0, 0, 0, 0.28);
+}
+
+.execution-card {
+	border-radius: 17px;
+	background: color-mix(in oklch, var(--color-gecko-shade) 46%, transparent);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.execution-card-muted {
+	background: color-mix(in oklch, var(--color-gecko-black) 72%, var(--color-gecko-shade));
+}
+
+.asset-surface {
+	border-radius: 10px;
+	background: color-mix(in oklch, var(--color-gecko-shade) 26%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--color-gecko-gray) 13%, transparent);
+}
+
+.asset-surface-header {
+	background: color-mix(in oklch, var(--color-gecko-shade) 32%, transparent);
 }
 
 /* Subtle image outline for dark mode — pure white at 8%, never tinted (emil). */
