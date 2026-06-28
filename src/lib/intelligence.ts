@@ -688,6 +688,7 @@ export type HomepageIntelligence = {
 const MAX_PER_LIST = 6;
 
 export type OpportunityKind =
+	| "funding_spread"
 	| "price_range"
 	| "stale_market"
 	| "liquidity_migration"
@@ -696,23 +697,28 @@ export type OpportunityKind =
 	| "volume_oi_shock";
 
 export type OpportunitySeverity = SignalSeverity;
+export type OpportunityConfidence = "high" | "medium" | "low" | "incomplete";
 
 export type Opportunity = {
 	id: string;
 	kind: OpportunityKind;
 	severity: OpportunitySeverity;
+	confidence: OpportunityConfidence;
 	score: number;
 	assetId: string;
 	marketKeys: string[];
 	venue?: string;
 	namespace?: string;
 	bps?: number;
+	fundingApr?: number;
+	fundingSpread?: number;
 	value: number;
 	volume: number;
 	oi: number;
 	primary: string;
 	secondary: string;
 	why: string;
+	riskLabels?: string[];
 };
 
 export type OpportunityFilters = {
@@ -734,11 +740,34 @@ function opportunitySeverity(
 	kind: OpportunityKind,
 	value = 0
 ): OpportunitySeverity {
+	if (kind === "funding_spread" && isActionableAsset(asset)) return "actionable";
 	if (kind === "stale_market") return "risky";
 	if (kind === "price_range" && isActionableAsset(asset, value)) return "actionable";
 	if (kind === "high_concentration" && value >= 0.85) return "risky";
 	if (kind === "liquidity_migration" || kind === "volume_oi_shock") return "interesting";
 	return "watch";
+}
+
+type FundingAwareMarket = DiffedSnapshot["markets"][string] & {
+	fundingRate?: number | null;
+	fundingIntervalHours?: number | null;
+	nextFundingAt?: string | Date | null;
+};
+
+function fundingData(market: DiffedSnapshot["markets"][string]) {
+	const fundingMarket = market as FundingAwareMarket;
+	if (
+		typeof fundingMarket.fundingRate !== "number" ||
+		typeof fundingMarket.fundingIntervalHours !== "number" ||
+		fundingMarket.fundingIntervalHours <= 0
+	) {
+		return null;
+	}
+	return {
+		rate: fundingMarket.fundingRate,
+		intervalHours: fundingMarket.fundingIntervalHours,
+		apr: fundingMarket.fundingRate * (24 / fundingMarket.fundingIntervalHours) * 365
+	};
 }
 
 function categoryMatchesOpportunity(
@@ -780,6 +809,46 @@ export function buildOpportunities(
 
 		const conc = computeVenueConcentration(snapshot, assetId);
 		const div = computePriceDivergence(snapshot, assetId);
+		const fundingMarkets = asset.marketIds
+			.map((marketKey) => ({ marketKey, market: snapshot.markets[marketKey] }))
+			.map((row) => ({ ...row, funding: row.market ? fundingData(row.market) : null }))
+			.filter((row): row is typeof row & { funding: NonNullable<typeof row.funding> } =>
+				Boolean(row.funding)
+			);
+		if (fundingMarkets.length >= 2) {
+			const sortedFunding = [...fundingMarkets].sort((a, b) => a.funding.apr - b.funding.apr);
+			const low = sortedFunding[0];
+			const high = sortedFunding[sortedFunding.length - 1];
+			const fundingSpread = high.funding.apr - low.funding.apr;
+			const bpsValue = fundingSpread * 10_000;
+			const marketKeys = [low.marketKey, high.marketKey];
+			if (
+				fundingSpread > 0 &&
+				bpsValue >= minBps &&
+				venueMatchesOpportunity(snapshot, marketKeys, filters.venue)
+			) {
+				const severity = opportunitySeverity(asset, "funding_spread", bpsValue);
+				opportunities.push({
+					id: `funding:${assetId}`,
+					kind: "funding_spread",
+					severity,
+					confidence: isActionableAsset(asset) ? "high" : "medium",
+					score: bpsValue * Math.log10(Math.max(asset.volume, 10)),
+					assetId,
+					marketKeys,
+					bps: bpsValue,
+					fundingApr: fundingSpread,
+					fundingSpread,
+					value: fundingSpread,
+					volume: asset.volume,
+					oi: asset.oi,
+					primary: `${pct(fundingSpread)} annualized funding spread`,
+					secondary: `${humanVenueName(low.market.venue, low.market.namespace)} lower / ${humanVenueName(high.market.venue, high.market.namespace)} higher`,
+					why: `Funding differs by ${pct(fundingSpread)} annualized across comparable venues with ${formatCompact(asset.volume)} 24h volume and ${formatCompact(asset.oi)} OI.`,
+					riskLabels: asset.volume >= 1_000_000 ? [] : ["thin liquidity"]
+				});
+			}
+		}
 		if (div && div.bps >= Math.max(THRESHOLDS.priceDivergenceBps, minBps)) {
 			const marketKeys = [div.lowMarketKey, div.highMarketKey];
 			if (venueMatchesOpportunity(snapshot, marketKeys, filters.venue)) {
@@ -790,6 +859,7 @@ export function buildOpportunities(
 					id: `range:${assetId}`,
 					kind: "price_range",
 					severity,
+					confidence: severity === "actionable" ? "high" : "medium",
 					score: div.bps * Math.log10(Math.max(asset.volume, 10)),
 					assetId,
 					marketKeys,
@@ -799,7 +869,8 @@ export function buildOpportunities(
 					oi: asset.oi,
 					primary: `${bps(div.bps)} venue range`,
 					secondary: `${humanVenueName(lowMarket.venue, lowMarket.namespace)} low / ${humanVenueName(highMarket.venue, highMarket.namespace)} high`,
-					why: `Comparable-quote venues are ${bps(div.bps)} apart with ${formatCompact(asset.volume)} 24h volume and ${formatCompact(asset.oi)} OI.`
+					why: `Comparable-quote venues are ${bps(div.bps)} apart with ${formatCompact(asset.volume)} 24h volume and ${formatCompact(asset.oi)} OI.`,
+					riskLabels: div.bps >= 200 ? ["confirm marks"] : []
 				});
 			}
 		}
@@ -814,6 +885,7 @@ export function buildOpportunities(
 					id: `stale:${marketKey}`,
 					kind: "stale_market",
 					severity: "risky",
+					confidence: "incomplete",
 					score: market.oi,
 					assetId,
 					marketKeys: [marketKey],
@@ -824,7 +896,8 @@ export function buildOpportunities(
 					oi: market.oi,
 					primary: "Stale venue risk",
 					secondary: humanVenueName(market.venue, market.namespace),
-					why: `${humanVenueName(market.venue, market.namespace)} has open interest but no recorded 24h volume in the latest batch.`
+					why: `${humanVenueName(market.venue, market.namespace)} has open interest but no recorded 24h volume in the latest batch.`,
+					riskLabels: ["freshness risk"]
 				});
 			}
 
@@ -833,6 +906,7 @@ export function buildOpportunities(
 					id: `new:${marketKey}`,
 					kind: "new_listing",
 					severity: "watch",
+					confidence: "low",
 					score: Math.max(market.volume, 1),
 					assetId,
 					marketKeys: [marketKey],
@@ -843,7 +917,8 @@ export function buildOpportunities(
 					oi: market.oi,
 					primary: "New venue listing",
 					secondary: humanVenueName(market.venue, market.namespace),
-					why: `A new ${assetDisplayName(snapshot, assetId)} market appeared on ${humanVenueName(market.venue, market.namespace)}.`
+					why: `A new ${assetDisplayName(snapshot, assetId)} market appeared on ${humanVenueName(market.venue, market.namespace)}.`,
+					riskLabels: ["new market"]
 				});
 			}
 		}
@@ -855,6 +930,7 @@ export function buildOpportunities(
 					id: `concentration:${assetId}`,
 					kind: "high_concentration",
 					severity: opportunitySeverity(asset, "high_concentration", conc.topVolumeShare),
+					confidence: conc.topVolumeShare >= 0.85 ? "medium" : "low",
 					score: conc.topVolumeShare * Math.log10(Math.max(asset.volume, 10)) * 100,
 					assetId,
 					marketKeys: [top.marketKey],
@@ -865,7 +941,8 @@ export function buildOpportunities(
 					oi: asset.oi,
 					primary: `${(conc.topVolumeShare * 100).toFixed(1)}% venue concentration`,
 					secondary: humanVenueName(top.venue, top.namespace),
-					why: `${humanVenueName(top.venue, top.namespace)} accounts for ${(top.volumeShare * 100).toFixed(1)}% of volume and ${(top.oiShare * 100).toFixed(1)}% of OI.`
+					why: `${humanVenueName(top.venue, top.namespace)} accounts for ${(top.volumeShare * 100).toFixed(1)}% of volume and ${(top.oiShare * 100).toFixed(1)}% of OI.`,
+					riskLabels: conc.topVolumeShare >= 0.85 ? ["venue concentration"] : []
 				});
 			}
 		}
@@ -879,6 +956,7 @@ export function buildOpportunities(
 						id: `shock:${assetId}`,
 						kind: "volume_oi_shock",
 						severity: opportunitySeverity(asset, "volume_oi_shock"),
+						confidence: "medium",
 						score: (absVolumeChange + absOiChange) * Math.log10(Math.max(asset.volume, 10)),
 						assetId,
 						marketKeys: asset.marketIds,
@@ -887,7 +965,8 @@ export function buildOpportunities(
 						oi: asset.oi,
 						primary: `Volume ${pct(asset.volumeChange)} / OI ${pct(asset.oiChange)}`,
 						secondary: "market shock",
-						why: `Volume and open interest moved together over 24h, suggesting fresh positioning or unwind pressure.`
+						why: `Volume and open interest moved together over 24h, suggesting fresh positioning or unwind pressure.`,
+						riskLabels: []
 					});
 				}
 			}
@@ -911,6 +990,7 @@ export function buildOpportunities(
 					id: `migration:${assetId}:${venueShift.venue}`,
 					kind: "liquidity_migration",
 					severity: "interesting",
+					confidence: "medium",
 					score: Math.abs(venueShift.oiShareChange) * Math.log10(Math.max(asset.oi, 10)) * 100,
 					assetId,
 					marketKeys: venueRows.map((row) => row.marketKey),
@@ -920,7 +1000,8 @@ export function buildOpportunities(
 					oi: asset.oi,
 					primary: `${pct(venueShift.oiShareChange)} venue OI share`,
 					secondary: humanVenueName(venueShift.venue),
-					why: `${humanVenueName(venueShift.venue)} OI share changed by ${pct(venueShift.oiShareChange)} while this asset trades across ${conc.venueCount} venues.`
+					why: `${humanVenueName(venueShift.venue)} OI share changed by ${pct(venueShift.oiShareChange)} while this asset trades across ${conc.venueCount} venues.`,
+					riskLabels: []
 				});
 			}
 		}
